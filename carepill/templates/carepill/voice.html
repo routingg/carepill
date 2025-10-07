@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}케어필과 대화 | CarePill{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'carepill/css/voice.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<section class="page-section">
+  <h1 class="page-title">케어필과 대화</h1>
+  <p class="page-desc">음성으로 약 관련 정보를 물어보세요.</p>
+
+  <div class="chat-box">
+    <div class="chat-bubble bot">안녕하세요! 무엇을 도와드릴까요?</div>
+    <div class="chat-bubble user">오늘 먹을 약 알려줘</div>
+
+    <div class="input-row">
+      <input type="text" placeholder="메시지를 입력하세요...">
+      <button class="primary-btn">보내기</button>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

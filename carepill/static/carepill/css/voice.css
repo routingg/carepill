@@ -1,0 +1,51 @@
+.chat-box {
+  width: 80%;
+  max-width: 700px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 18px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+}
+.chat-bubble {
+  display: inline-block;
+  max-width: 80%;
+  text-align: left;
+  margin: 10px 0;
+  padding: 16px 20px;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+.chat-bubble.bot {
+  background: #f1f5ff;
+  color: #2b7cff;
+}
+.chat-bubble.user {
+  background: #2b7cff;
+  color: #fff;
+  margin-left: auto;
+}
+.input-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 25px;
+}
+.input-row input {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+.input-row button {
+  padding: 14px 24px;
+  font-size: 1rem;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .chat-box { width: 95%; padding: 20px; }
+  .chat-bubble { font-size: 1rem; }
+}

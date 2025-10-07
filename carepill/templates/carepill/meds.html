@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}현재 있는 약 | CarePill{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'carepill/css/meds.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<section class="page-section">
+  <h1 class="page-title">현재 있는 약</h1>
+  <p class="page-desc">보관 중인 약 목록입니다.</p>
+
+  <div class="card-grid">
+    <div class="info-card">
+      <h3>타이레놀 500</h3>
+      <p>해열·진통제 | 1회 1정, 1일 3회</p>
+    </div>
+    <div class="info-card">
+      <h3>가스터 10mg</h3>
+      <p>소화기계 약 | 식후 30분</p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

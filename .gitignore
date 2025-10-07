@@ -1,0 +1,94 @@
+# =====================================
+# Python & Django 기본 설정
+# =====================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Django stuff
+*.log
+*.pot
+*.pyc
+*.sqlite3
+db.sqlite3
+/media/
+staticfiles/
+static_root/
+static_cdn/
+tmp/
+temp/
+
+# 환경변수 및 보안 관련
+.env
+*.env
+.env.*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Unit test / coverage reports
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache
+pytest_cache/
+coverage.xml
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# =====================================
+# (선택사항) 프로젝트 특화 항목
+# =====================================
+
+# Media / Uploads
+uploads/
+user_uploads/
+
+# Django migration 파일 중 자동 생성 초기 버전 제외하고 싶을 때
+# (필요 시 해제)
+# */migrations/__pycache__/
+# */migrations/*.py
+
+# OS별 가상환경 파일 (예: Windows용 Python venv)
+Scripts/

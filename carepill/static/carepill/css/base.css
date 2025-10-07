@@ -1,0 +1,100 @@
+/* ===============================
+   기본 폰트 및 색상
+=============================== */
+body {
+  margin: 0;
+  font-family: 'Noto Sans KR', sans-serif;
+  background-color: #f9fafc;
+  color: #111;
+  font-size: 1.05rem;
+}
+
+/* ===============================
+   네비게이션 바
+=============================== */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #7fb3ff, #2b7cff);
+  padding: 16px 48px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.nav .brand {
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.9rem;
+  text-decoration: none;
+}
+.nav nav a {
+  margin-left: 28px;
+  text-decoration: none;
+  color: #eef3ff;
+  font-weight: 500;
+  font-size: 1.15rem;
+  transition: opacity 0.3s;
+}
+.nav nav a:hover { opacity: 0.8; }
+
+/* ===============================
+   공통 섹션, 타이틀
+=============================== */
+.page-section {
+  width: 85%;
+  max-width: 950px;
+  margin: 80px auto 100px;
+  text-align: center;
+}
+
+.page-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #2b7cff;
+  margin-bottom: 10px;
+}
+
+.page-desc {
+  font-size: 1.15rem;
+  color: #555;
+  margin-bottom: 40px;
+}
+
+/* ===============================
+   버튼
+=============================== */
+.primary-btn {
+  background: linear-gradient(90deg, #7fb3ff, #2b7cff);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 12px 36px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(43,124,255,0.3);
+}
+
+/* ===============================
+   푸터
+=============================== */
+.footer {
+  text-align: center;
+  padding: 22px;
+  color: #666;
+  font-size: 1rem;
+  border-top: 1px solid #eee;
+  background-color: #fafafa;
+}
+
+/* ===============================
+   반응형
+=============================== */
+@media (max-width: 768px) {
+  .page-section { width: 92%; }
+  .page-title { font-size: 2rem; }
+  .page-desc { font-size: 1rem; }
+}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}약 투입 | CarePill{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'carepill/css/scan.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<section class="page-section">
+  <h1 class="page-title">약 투입 (스캔)</h1>
+  <p class="page-desc">약봉지를 업로드하면 자동으로 인식됩니다.</p>
+
+  <form class="upload-box" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="image" id="fileInput" accept="image/*,.pdf">
+    <button type="submit" class="primary-btn">업로드</button>
+  </form>
+
+  <div class="progress">
+    <div class="bar" style="width:30%"></div>
+  </div>
+
+  <div class="result-box">
+    <h2>결과</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>항목</th><th>값</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>약명</td><td>타이레놀 500</td></tr>
+        <tr><td>용법</td><td>1일 3회 1정</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% endblock %}

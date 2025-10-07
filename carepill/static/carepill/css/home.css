@@ -1,0 +1,90 @@
+.hero-card {
+  text-align: center;
+  padding: 110px 20px 80px;
+}
+.hero-title {
+  font-size: 4.2rem;
+  font-weight: 900;
+  color: #2b7cff;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+.hero-sub {
+  font-size: 1.35rem;
+  color: #444;
+  opacity: 0.9;
+}
+
+/* 메뉴 카드 */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 32px;
+  width: 85%;
+  max-width: 950px;
+  margin: 50px auto 100px;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 55px 25px;
+  border-radius: 20px;
+  text-decoration: none;
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.tile:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 26px rgba(0,0,0,0.12);
+}
+.tile h3 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.tile p {
+  font-size: 1.1rem;
+  opacity: 0.95;
+}
+.tile-blue   { background: linear-gradient(135deg, #7fb3ff, #2b7cff); }
+.tile-green  { background: linear-gradient(135deg, #9de4b0, #3ccf7a); }
+.tile-purple { background: linear-gradient(135deg, #c8adff, #8155d6); }
+
+/* 음성 명령 UI */
+.voice-control {
+  text-align: center;
+  margin: 80px auto;
+}
+.mic-btn {
+  background: linear-gradient(90deg, #7fb3ff, #2b7cff);
+  color: #fff;
+  border: none;
+  padding: 18px 60px;
+  border-radius: 50px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.mic-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(43,124,255,0.3);
+}
+.voice-result {
+  margin-top: 16px;
+  color: #555;
+  font-size: 1.1rem;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .hero-title { font-size: 3rem; }
+  .tile-grid { gap: 20px; }
+  .tile { padding: 45px 20px; }
+  .tile h3 { font-size: 1.5rem; }
+  .tile p { font-size: 1rem; }
+}

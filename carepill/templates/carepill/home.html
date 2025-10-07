@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'carepill/css/home.css' %}">
+{% endblock %}
+
+{% block title %}홈 | CarePill{% endblock %}
+
+{% block content %}
+<!-- 홈 내용 -->
+<div class="home-wrap">
+  <section class="hero-card">
+    <h1 class="hero-title">CARE PILL</h1>
+    <p class="hero-sub">당신의 복약을 더 쉽고, 더 안전하게</p>
+  </section>
+  <section class="tile-grid">
+    <a class="tile tile-blue" href="/scan/">
+      <h3>약 투입</h3>
+      <p>약봉지 스캔 및 업로드</p>
+    </a>
+    <a class="tile tile-green" href="/meds/">
+      <h3>현재 있는 약</h3>
+      <p>보관 중인 약 목록 확인</p>
+    </a>
+    <a class="tile tile-purple" href="/voice/">
+      <h3>케어필과 대화</h3>
+      <p>보이스 기반 인터페이스</p>
+    </a>
+  </section>
+
+  <!-- 음성 명령 UI -->
+  <div class="voice-control">
+    <button id="micBtn" class="mic-btn">🎤 말하기</button>
+    <p id="voiceResult" class="voice-result">음성을 인식하려면 버튼을 누르세요</p>
+  </div>
+
+  <script src="{% static 'carepill/js/voice_control.js' %}"></script>
+{% endblock %}

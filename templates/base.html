@@ -1,0 +1,33 @@
+{% load static %}
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}CarePill{% endblock %}</title>
+
+  <!-- 공통 CSS -->
+  <link rel="stylesheet" href="{% static 'carepill/css/base.css' %}">
+  <!-- 페이지별 CSS를 block으로 받기 -->
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="/">CARE PILL</a>
+    <nav>
+      <a href="/scan/">약 투입</a>
+      <a href="/meds/">현재 있는 약</a>
+      <a href="/voice/">케어필과 대화</a>
+    </nav>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">© CarePill</footer>
+
+  <script src="{% static 'carepill/js/voice_control.js' %}"></script>
+
+</body>
+</html>

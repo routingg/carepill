@@ -1,0 +1,32 @@
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-top: 30px;
+}
+.info-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.info-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+.info-card h3 {
+  color: #2b7cff;
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+.info-card p {
+  color: #444;
+  font-size: 1.05rem;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .info-card h3 { font-size: 1.3rem; }
+  .info-card p { font-size: 0.95rem; }
+}

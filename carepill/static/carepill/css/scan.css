@@ -1,0 +1,62 @@
+.upload-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 40px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+  margin-bottom: 50px;
+}
+.upload-box input[type=file] {
+  border: 1px solid #ccc;
+  padding: 14px;
+  width: 70%;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* 진행바 */
+.progress {
+  width: 70%;
+  height: 16px;
+  background: #eee;
+  border-radius: 10px;
+  margin: 0 auto 40px;
+  overflow: hidden;
+}
+.progress .bar {
+  height: 100%;
+  background: linear-gradient(90deg, #7fb3ff, #2b7cff);
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+/* 결과 테이블 */
+.data-table {
+  width: 80%;
+  margin: 0 auto;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.data-table th, .data-table td {
+  border: 1px solid #eee;
+  padding: 16px 12px;
+  font-size: 1.05rem;
+}
+.data-table th {
+  background: #f1f5ff;
+  color: #2b7cff;
+  font-weight: 700;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .upload-box input[type=file] { width: 90%; }
+  .progress { width: 90%; }
+  .data-table { width: 95%; font-size: 0.95rem; }
+}

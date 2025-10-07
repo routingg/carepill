@@ -1,4 +1,7 @@
 # speech_proto.py
+DEBUG_EVENTS = True
+
+
 import os
 import ssl
 import json

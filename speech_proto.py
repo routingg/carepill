@@ -1,314 +1,197 @@
-# speech_proto.py
-DEBUG_EVENTS = True
+# speech_realtime_fix_no_audio_block.py
+# PyAudio + OpenAI Realtime (server_vad 자동 턴)
+# - session.audio 블록 제거 (배포에서 미지원)
+# - voice/output_audio_format 만으로 TTS
+# - 오디오/텍스트 확실히 출력 + 오디오 수신 감시
 
-
-import os
-import ssl
-import json
-import time
-import base64
 import asyncio
-import queue
-import numpy as np
-import sounddevice as sd
 import websockets
+import pyaudio
+import base64
+import json
+import os
+import time
 
-# ===== 설정 =====
-MODEL = "gpt-4o-realtime-preview"
-SAMPLE_RATE = 24000
-DTYPE = np.int16
-CHUNK_MS = 40
-CHUNK_SAMPLES = int(SAMPLE_RATE * (CHUNK_MS / 1000.0))
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise SystemExit("환경변수 OPENAI_API_KEY 가 없습니다.")
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
 
-# 침묵 감지(간단 RMS)
-SILENCE_MS = 550            # 이만큼 조용하면 commit (500~800 사이 조정 권장)
-VOICE_RMS_THRESHOLD = 500   # 200~2000 범위에서 환경에 맞게 조절
+API_KEY = os.getenv("OPENAI_API_KEY")
 
-# 로깅/디버깅
-LOG_TO_FILE = False
-DEBUG_EVENTS = False
-LOG_PATH = "transcript.log"
+MODEL = "gpt-4o-mini-realtime-preview-2024-12-17"
+VOICE = "verse"  # 안 나오면 "alloy"로 바꿔 테스트
 
-# ===== 유틸 =====
-def pcm16_to_b64(pcm: np.ndarray) -> str:
-    return base64.b64encode(pcm.tobytes()).decode("ascii")
+RATE = 24000
+CHUNK = 1024
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
 
-def b64_to_pcm16(b64: str) -> np.ndarray:
-    return np.frombuffer(base64.b64decode(b64), dtype=DTYPE)
+audio = pyaudio.PyAudio()
+input_stream = None
+output_stream = None
 
-def rms_level(chunk: np.ndarray) -> float:
-    if chunk is None or len(chunk) == 0:
-        return 0.0
-    return float(np.sqrt(np.mean(chunk.astype(np.float32) ** 2)))
+def b64enc(data: bytes) -> str:
+    return base64.b64encode(data).decode("utf-8")
 
-def log_append(line: str):
-    if not LOG_TO_FILE:
-        return
+def b64dec(b64: str) -> bytes:
+    return base64.b64decode(b64)
+
+def extract_text_from_completed(msg: dict) -> str:
     try:
-        with open(LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(line.rstrip() + "\n")
+        resp = msg.get("response") or {}
+        output = resp.get("output") or []
+        texts = []
+        for item in output:
+            if isinstance(item, dict):
+                t1 = item.get("text")
+                if isinstance(t1, str) and t1.strip():
+                    texts.append(t1.strip())
+                content = item.get("content")
+                if isinstance(content, list):
+                    for c in content:
+                        if isinstance(c, dict):
+                            t2 = c.get("text") or c.get("transcript")
+                            if isinstance(t2, str) and t2.strip():
+                                texts.append(t2.strip())
+        if texts:
+            return " ".join(texts)
     except Exception:
         pass
+    return ""
 
-# ===== 녹음 / 재생 =====
-class AudioIO:
-    def __init__(self, sample_rate=SAMPLE_RATE):
-        self.sample_rate = sample_rate
-        self.in_q: "queue.Queue[np.ndarray]" = queue.Queue()
-        self.out_q: "queue.Queue[np.ndarray]" = queue.Queue()
-        self._in_stream = None
-        self._out_stream = None
+async def run_realtime():
+    global input_stream, output_stream, audio
 
-    def _in_callback(self, indata, frames, time_, status):
-        if status:
-            pass
-        mono = indata[:, 0].copy() if indata.ndim > 1 else indata.copy()
-        self.in_q.put(mono.astype(DTYPE))
+    if not API_KEY:
+        print("❌ OPENAI_API_KEY 환경변수가 없습니다.")
+        return
 
-    def _out_callback(self, outdata, frames, time_, status):
-        if status:
-            pass
-        try:
-            chunk = self.out_q.get_nowait()
-        except queue.Empty:
-            chunk = np.zeros(frames, dtype=DTYPE)
-        if len(chunk) < frames:
-            padded = np.zeros(frames, dtype=DTYPE)
-            padded[:len(chunk)] = chunk
-            chunk = padded
-        outdata[:, 0] = chunk
-
-    def start(self):
-        # 문제 생기면 blocksize=None로 바꿔서 테스트
-        self._in_stream = sd.InputStream(
-            channels=1,
-            samplerate=self.sample_rate,
-            dtype=DTYPE,
-            callback=self._in_callback,
-            blocksize=CHUNK_SAMPLES,
-        )
-        self._out_stream = sd.OutputStream(
-            channels=1,
-            samplerate=self.sample_rate,
-            dtype=DTYPE,
-            callback=self._out_callback,
-            blocksize=CHUNK_SAMPLES,
-        )
-        self._in_stream.start()
-        self._out_stream.start()
-
-    def stop(self):
-        for s in (self._in_stream, self._out_stream):
-            if s:
-                try:
-                    s.stop()
-                    s.close()
-                except Exception:
-                    pass
-
-    def read_chunk(self, timeout=0.2) -> np.ndarray | None:
-        try:
-            return self.in_q.get(timeout=timeout)
-        except queue.Empty:
-            return None
-
-    def play_chunk(self, pcm: np.ndarray):
-        self.out_q.put(pcm)
-
-# ===== WebSocket 세션 =====
-async def run_session():
     uri = f"wss://api.openai.com/v1/realtime?model={MODEL}"
-    headers = [
-        ("Authorization", f"Bearer {OPENAI_API_KEY}"),
-        ("OpenAI-Beta", "realtime=v1"),
-    ]
-    ssl_context = ssl.create_default_context()
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "OpenAI-Beta": "realtime=v1"
+    }
 
-    audio = AudioIO()
-    audio.start()
-    print("실시간 대화 시작: 말하면 서버가 VAD로 턴을 감지합니다. (Ctrl+C 종료)")
+    # 오디오 장치 열기
+    input_stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE,
+                              input=True, frames_per_buffer=CHUNK)
+    output_stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE,
+                               output=True, frames_per_buffer=CHUNK)
 
-    async with websockets.connect(
-        uri, additional_headers=headers, ssl=ssl_context,
-        ping_interval=20, ping_timeout=20
-    ) as ws:
+    print(f"🎧 {MODEL} / voice={VOICE}")
+    print("🎙️ 마이크·스피커 준비 완료. 서버 연결 중...")
 
-        # ---- 세션 설정: 서버 VAD 사용, 전사 ON, 포맷/보이스 명시 ----
-        await ws.send(json.dumps({
+    async with websockets.connect(uri, additional_headers=headers,
+                                  ping_interval=20, ping_timeout=20) as ws:
+        print("✅ WebSocket 연결 완료")
+
+        # === 세션 업데이트 ===
+        # ⚠️ 'audio' 블록 삭제 (배포에서 미지원)
+        session_update = {
             "type": "session.update",
             "session": {
                 "modalities": ["audio", "text"],
-                "instructions": "You are CarePill, a friendly Korean medication assistant. Reply in concise Korean.",
-                "voice": "alloy",
-                "input_audio_format": {"type": "pcm16", "sample_rate": SAMPLE_RATE},
-                "output_audio_format": {"type": "pcm16", "sample_rate": SAMPLE_RATE},
-                "turn_detection": { "type": "server_vad" },  # 서버가 턴을 만들고 응답 생성
-                "input_audio_transcription": { "model": "gpt-4o-transcribe" }
+                "instructions": "You are CarePill, a friendly Korean assistant. Reply in Korean.",
+                "voice": VOICE,                     # TTS 음성
+                "input_audio_format": "pcm16",
+                "output_audio_format": "pcm16",     # TTS 포맷
+                "input_audio_transcription": {"model": "gpt-4o-transcribe"},
+                "turn_detection": {"type": "server_vad", "create_response": True, "silence_duration_ms": 500}
             }
-        }))
+        }
+        await ws.send(json.dumps(session_update))
+        print("🧠 세션 설정 완료 — 서버가 자동으로 턴을 감지합니다.\n")
 
-        # ----- 상태/버퍼 -----
-        user_text_buf = ""      # 사용자 전사 누적
-        model_text_buf = ""     # 모델 텍스트 누적
-
-        # ----- 출력 헬퍼 -----
-        def flush_user():
-            nonlocal user_text_buf
-            text = user_text_buf.strip()
-            if text:
-                line = f"YOU: {text}"
-                print("\n" + line)
-                log_append(line)
-            user_text_buf = ""
-
-        def flush_model():
-            nonlocal model_text_buf
-            text = model_text_buf.strip()
-            if text:
-                line = f"CAREPILL: {text}"
-                print(line + "\n")
-                log_append(line)
-            model_text_buf = ""
-
-        # ----- 전사 추출(여러 포맷 대응) -----
-        def extract_transcript_fields(msg: dict) -> str:
-            # 1) 평평한 키
-            for k in ("transcript", "text"):
-                v = msg.get(k)
-                if isinstance(v, str) and v.strip():
-                    return v
-
-            # 2) nested transcription object
-            trans = msg.get("transcription")
-            if isinstance(trans, dict):
-                for k in ("text", "transcript"):
-                    v = trans.get(k)
-                    if isinstance(v, str) and v.strip():
-                        return v
-
-            # 3) conversation.item.created 구조 (item.content[*].text/transcript)
-            item = msg.get("item")
-            if isinstance(item, dict):
-                content = item.get("content") or []
-                if isinstance(content, list):
-                    for c in content:
-                        if not isinstance(c, dict):
-                            continue
-                        for k in ("text", "transcript"):
-                            v = c.get(k)
-                            if isinstance(v, str) and v.strip():
-                                return v
-            return ""
-
-        # ----- 수신 루프 -----
-        async def receiver():
-            nonlocal user_text_buf, model_text_buf
-            try:
-                async for raw in ws:
-                    msg = json.loads(raw)
-                    t = msg.get("type")
-
-                    if t == "session.updated":
-                        print("[세션 업데이트 완료]")
-
-                    # 서버가 응답을 만들었을 때
-                    elif t == "response.created":
-                        model_text_buf = ""
-                        print("[응답 시작]")
-
-                    # 모델 텍스트 스트림
-                    elif t == "response.text.delta":
-                        delta = msg.get("delta") or ""
-                        if delta:
-                            model_text_buf += delta
-                    elif t == "response.text.done":
-                        flush_model()
-
-                    # 일부 배포 호환
-                    elif t == "response.output_text.delta":
-                        delta = msg.get("delta") or ""
-                        if delta:
-                            model_text_buf += delta
-
-                    # 모델 오디오 스트림
-                    elif t == "response.audio.delta":
-                        b64 = msg.get("audio")
-                        if b64:
-                            pcm = b64_to_pcm16(b64)
-                            audio.play_chunk(pcm)
-
-                    # 사용자 전사 이벤트(가능한 모든 신호 처리)
-                    elif t in (
-                        "conversation.item.audio_transcription.delta",
-                        "conversation.item.audio_transcription.completed",
-                        "conversation.item.input_audio_transcription.delta",
-                        "conversation.item.input_audio_transcription.completed",
-                        "input_audio_transcription.delta",
-                        "input_audio_transcription.completed",
-                        "conversation.item.created",  # user input item 생성
-                    ):
-                        transcript = extract_transcript_fields(msg)
-                        if transcript:
-                            user_text_buf += transcript
-                        # 경계 이벤트에서 flush
-                        if t.endswith(".completed") or t == "conversation.item.created":
-                            flush_user()
-
-                    elif t == "response.done":
-                        flush_model()
-
-                    elif t == "error":
-                        print(f"[SERVER ERROR] {msg}")
-
-                    else:
-                        if DEBUG_EVENTS:
-                            print(f"[DBG] Unhandled event type: {t} :: keys={list(msg.keys())}")
-
-            except websockets.ConnectionClosed as e:
-                print(f"[WS CLOSED] {e}")
-
-        # ----- 송신 루프: append 하다가 '침묵'이면 commit만 보냄 -----
         async def sender():
-            last_voice_ts = time.time()
-            had_voice_since_last_commit = False
+            # 오디오 append만 (commit/response.create 금지)
+            while True:
+                data = input_stream.read(CHUNK, exception_on_overflow=False)
+                await ws.send(json.dumps({
+                    "type": "input_audio_buffer.append",
+                    "audio": b64enc(data)
+                }))
+                await asyncio.sleep(0.02)
+
+        async def receiver():
+            text_buf = ""
+            user_buf = ""
+            audio_chunks = 0
+            last_audio_ts = time.time()
 
             while True:
-                chunk = await asyncio.to_thread(audio.read_chunk, 0.2)
-                now = time.time()
+                raw = await ws.recv()
+                try:
+                    msg = json.loads(raw)
+                except Exception:
+                    continue
 
-                if chunk is not None and len(chunk) > 0:
-                    # 마이크 오디오 append
-                    await ws.send(json.dumps({
-                        "type": "input_audio_buffer.append",
-                        "audio": pcm16_to_b64(chunk)
-                    }))
+                t = msg.get("type")
 
-                    # 간단 RMS로 발화 감지
-                    if rms_level(chunk) > VOICE_RMS_THRESHOLD:
-                        last_voice_ts = now
-                        had_voice_since_last_commit = True
+                # 사용자 전사
+                if t and t.startswith("input_audio_transcription"):
+                    tx = msg.get("transcript") or msg.get("text")
+                    if tx and tx.strip():
+                        user_buf += tx.strip() + " "
+                        print(f"\r🎤 YOU: {user_buf.strip()}", end="", flush=True)
 
-                # 발화가 있었고, 일정 시간 침묵이 지속되면 commit(턴 종료)
-                if had_voice_since_last_commit and (now - last_voice_ts) * 1000 >= SILENCE_MS:
-                    await ws.send(json.dumps({ "type": "input_audio_buffer.commit" }))
-                    had_voice_since_last_commit = False
-                    # 서버 VAD가 이미 켜져 있어도 commit은 턴 경계 힌트로 안전
+                # 응답 시작
+                elif t == "response.created":
+                    text_buf = ""
+                    print("\n\n🤖 [응답 생성 시작]")
 
-        rx_task = asyncio.create_task(receiver())
-        tx_task = asyncio.create_task(sender())
+                # 텍스트 델타 (모든 변형)
+                elif t in ("response.output_text.delta", "response.text.delta", "response.delta"):
+                    delta = msg.get("delta", "")
+                    if isinstance(delta, str) and delta:
+                        text_buf += delta
+                        print(delta, end="", flush=True)
 
-        try:
-            await asyncio.gather(rx_task, tx_task)
-        finally:
-            for t in (rx_task, tx_task):
-                t.cancel()
-            audio.stop()
+                # 오디오 델타 (모든 변형 + 필드 호환)
+                elif t in ("output_audio.delta", "response.output_audio.delta", "response.audio.delta"):
+                    audio_b64 = msg.get("audio") or msg.get("delta")
+                    if audio_b64:
+                        output_stream.write(b64dec(audio_b64))
+                        audio_chunks += 1
+                        last_audio_ts = time.time()
+                        if audio_chunks % 20 == 0:
+                            print(f"\n🎵 [오디오 조각 수: {audio_chunks}]")
+
+                # 응답 완료
+                elif t in ("response.completed", "response.done", "response.text.done"):
+                    final_text = text_buf.strip() or extract_text_from_completed(msg).strip()
+                    if final_text:
+                        print(f"\n✅ CAREPILL: {final_text}\n")
+                    else:
+                        print("\n✅ CAREPILL: (음성으로만 응답)\n")
+                    user_buf = ""  # 다음 발화 준비
+                    # 5초간 오디오가 한 번도 안 왔으면 경고
+                    if time.time() - last_audio_ts > 5:
+                        print("⚠️ 경고: TTS 오디오가 수신되지 않았습니다. (voice 변경을 시도해보세요. 예: VOICE='alloy')")
+
+                elif t == "error":
+                    print(f"\n❗ 서버 오류: {msg}")
+
+        await asyncio.gather(sender(), receiver())
 
 if __name__ == "__main__":
     try:
-        asyncio.run(run_session())
+        asyncio.run(run_realtime())
     except KeyboardInterrupt:
-        print("종료")
+        print("\n🛑 사용자 중단")
+    finally:
+        try:
+            if input_stream:
+                if input_stream.is_active(): input_stream.stop_stream()
+                input_stream.close()
+            if output_stream:
+                if output_stream.is_active(): output_stream.stop_stream()
+                output_stream.close()
+        except Exception:
+            pass
+        try:
+            audio.terminate()
+        except Exception:
+            pass
+        print("🎵 종료")

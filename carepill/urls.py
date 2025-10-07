@@ -6,4 +6,6 @@ urlpatterns = [
     path("scan/", views.scan, name="scan"),
     path("meds/", views.meds, name="meds"),
     path("voice/", views.voice, name="voice"),
+
+    path("api/realtime/session/", views.realtime_session, name="rt_session"),
 ]

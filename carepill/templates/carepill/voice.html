@@ -1,26 +1,33 @@
 {% extends "base.html" %}
 {% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'carepill/css/voice.css' %}">{% endblock %}
 {% block title %}케어필과 대화 | CarePill{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'carepill/css/voice.css' %}">
-{% endblock %}
-
 {% block content %}
-
 <section class="page-section">
   <h1 class="page-title">케어필과 대화</h1>
-  <p class="page-desc">음성으로 약 관련 정보를 물어보세요.</p>
+  <p class="page-desc">실시간 보이스 인터페이스 (GPT Realtime)</p>
 
   <div class="chat-box">
-    <div class="chat-bubble bot">안녕하세요! 무엇을 도와드릴까요?</div>
-    <div class="chat-bubble user">오늘 먹을 약 알려줘</div>
-
-    <div class="input-row">
-      <input type="text" placeholder="메시지를 입력하세요...">
-      <button class="primary-btn">보내기</button>
+    <!-- ✅ 실시간 채팅 로그 -->
+    <div id="chatLog" style="height:340px; overflow:auto; padding:8px 4px;">
+      <!-- 여기에 실시간으로 말풍선이 추가됩니다 -->
     </div>
+
+    <div class="input-row" style="margin-top:14px">
+      <button id="startRtc" class="primary-btn">🎤 실시간 대화 시작</button>
+      <button id="stopRtc" class="primary-btn" style="display:none;background:#888">🛑 종료</button>
+    </div>
+
+    <!-- 모델의 음성 출력 -->
+    <audio id="remoteAudio" autoplay></audio>
+
+    <!-- (선택) 상태 텍스트 -->
+    <p id="rt-status" class="page-desc" style="margin-top:10px;">대기 중</p>
   </div>
 </section>
 
+<script src="{% static 'carepill/js/realtime_webrtc_chat.js' %}?v=20251007-1"></script>
+
 {% endblock %}
+

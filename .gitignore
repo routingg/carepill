@@ -93,3 +93,6 @@ user_uploads/
 
 # OS별 가상환경 파일 (예: Windows용 Python venv)
 Scripts/
+
+
+speech_proto.py

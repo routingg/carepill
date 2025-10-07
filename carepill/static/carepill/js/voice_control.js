@@ -1,65 +1,108 @@
-// --- CarePill: Wake-word Navigation (ko-KR) ---
-// 모드 설명:
-// - passive(대기): "케어필", "케어필아", "야 케어필" 중 하나를 인식하면 command 모드로 전환
-// - command(명령): 이어지는 한 문장을 명령으로 해석하여 페이지 이동 후 다시 passive 복귀
+// CarePill: Voice Navigation (Command-Only Mode, ko-KR)
+// - 버튼을 누르면 즉시 "명령 대기" 상태로 전환(웨이크워드 없음)
+// - 여러 번 말해도 계속 인식(continuous) + 화면 디버깅 콘솔 + 음성(TTS) 피드백
+// - 매칭 규칙에 따라 페이지 이동
 
 (function () {
+  const DEBUG = true;                    // 콘솔 로그 켜기
+  const USE_TTS = true;                  // 음성 피드백 사용
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const synth = window.speechSynthesis;
 
   if (!SpeechRecognition) {
-    console.warn("Web Speech API 미지원 브라우저입니다.");
+    alert("이 브라우저는 Web Speech API를 지원하지 않습니다.");
     return;
   }
 
-  // --------- UI ----------
-  const micBtn = document.createElement('button');
-  micBtn.id = 'globalMicBtn';
-  micBtn.textContent = '🎤 음성 켜기';
-  Object.assign(micBtn.style, {
-    position: 'fixed', right: '30px', bottom: '30px',
-    background: 'linear-gradient(90deg, #7fb3ff, #2b7cff)',
-    color: '#fff', border: 'none', padding: '12px 22px',
-    borderRadius: '24px', cursor: 'pointer', fontSize: '1rem',
-    boxShadow: '0 6px 14px rgba(43,124,255,0.3)', zIndex: 9999
-  });
-  document.body.appendChild(micBtn);
-
-  const statusBox = document.createElement('div');
-  statusBox.id = 'voiceStatus';
-  Object.assign(statusBox.style, {
-    position: 'fixed', right: '36px', bottom: '74px',
-    background: 'rgba(255,255,255,0.95)', color: '#333',
-    borderRadius: '10px', padding: '6px 12px',
-    boxShadow: '0 2px 6px rgba(0,0,0,0.1)', fontSize: '0.95rem',
+  // ========== UI: 글로벌 버튼 + 디버그 콘솔 ==========
+  const btn = document.createElement('button');
+  btn.id = 'globalMicBtn';
+  btn.textContent = '🎤 음성 명령 켜기';
+  Object.assign(btn.style, {
+    position: 'fixed', right: '28px', bottom: '28px',
+    background: 'linear-gradient(90deg, #7fb3ff, #2b7cff)', color: '#fff',
+    border: 'none', padding: '12px 20px', borderRadius: '24px',
+    cursor: 'pointer', fontSize: '1rem', boxShadow: '0 6px 14px rgba(43,124,255,0.3)',
     zIndex: 9999
   });
-  statusBox.textContent = '대기 꺼짐';
-  document.body.appendChild(statusBox);
+  document.body.appendChild(btn);
 
-  // --------- 상태 ----------
-  let mode = 'idle';          // 'idle' | 'passive' | 'command'
+  const panel = document.createElement('div');
+  panel.id = 'voiceDebugPanel';
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <strong>Voice Console</strong>
+      <span id="vc-badge" style="
+        display:inline-block;padding:2px 8px;border-radius:10px;
+        background:#bbb;color:#fff;font-size:.85rem;">OFF</span>
+    </div>
+    <div id="vc-state" style="font-size:.95rem;color:#333;">상태: 대기</div>
+    <div id="vc-interim" style="font-size:.95rem;color:#666;margin-top:6px;">(interim 없음)</div>
+    <div id="vc-last" style="font-size:.95rem;color:#111;margin-top:6px;">마지막 결과: -</div>
+    <div id="vc-match" style="font-size:.95rem;color:#2b7cff;margin-top:6px;">매칭: -</div>
+    <div id="vc-log" style="
+      margin-top:10px;height:130px;overflow:auto;background:#fff;
+      border:1px solid #eee;border-radius:8px;padding:8px;font-size:.9rem;"></div>
+  `;
+  Object.assign(panel.style, {
+    position: 'fixed', right: '28px', bottom: '84px',
+    width: '320px', maxWidth: '95vw',
+    background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(3px)',
+    border: '1px solid #e6e9f3', borderRadius: '12px',
+    boxShadow: '0 6px 18px rgba(0,0,0,0.08)', padding: '12px',
+    zIndex: 9999
+  });
+  document.body.appendChild(panel);
+
+  const elBadge  = panel.querySelector('#vc-badge');
+  const elState  = panel.querySelector('#vc-state');
+  const elInter  = panel.querySelector('#vc-interim');
+  const elLast   = panel.querySelector('#vc-last');
+  const elMatch  = panel.querySelector('#vc-match');
+  const elLog    = panel.querySelector('#vc-log');
+
+  const log = (msg) => {
+    if (DEBUG) console.log('[VOICE]', msg);
+    const div = document.createElement('div');
+    const ts = new Date().toLocaleTimeString();
+    div.textContent = `[${ts}] ${msg}`;
+    elLog.appendChild(div);
+    elLog.scrollTop = elLog.scrollHeight;
+  };
+
+  const setBadge = (on) => {
+    elBadge.textContent = on ? 'ON' : 'OFF';
+    elBadge.style.background = on ? '#2b7cff' : '#bbb';
+  };
+
+  // ========== 인식기 설정 ==========
+  const rec = new SpeechRecognition();
+  rec.lang = 'ko-KR';
+  rec.interimResults = true;   // 중간결과 표시
+  rec.continuous = true;       // 여러번 말해도 계속 듣기
+
   let listening = false;
-  let commandTimeoutId = null;
 
-  // 웨이크 워드 사전
-  const wakeWords = ['케어필', '케어필아', '안녕', '안녕하세요', '야 케어필'];
+  // 명령 라우팅 규칙 (synonyms 포함)
+  function routeFor(raw) {
+    const t = raw.replace(/\s+/g, '').toLowerCase();
 
-  // 페이지 명령 매핑
-  const commands = [
-    { test: s => s.includes('약투입') || s.includes('약 투입'), go: '/scan/' },
-    { test: s => s.includes('현재있는약') || s.includes('현재 있는 약'), go: '/meds/' },
-    { test: s => s.includes('케어필과대화') || s.includes('대화'), go: '/voice/' },
-    { test: s => s.includes('홈') || s.includes('메인'), go: '/' },
-  ];
+    const rules = [
+      { name: 'SCAN',   go: '/scan/',  tests: ['약투입','약투입창','약투입페이지','약투입해','스캔','업로드','약봉지','투입'] },
+      { name: 'MEDS',   go: '/meds/',  tests: ['현재있는약','현재약','약목록','보관약','보관중인약','내약'] },
+      { name: 'VOICE',  go: '/voice/', tests: ['케어필과대화','대화','채팅','챗봇','보이스'] },
+      { name: 'HOME',   go: '/',       tests: ['홈','메인','메뉴','처음','메인으로'] },
+    ];
 
-  // 전처리(공백 제거/소문자화)
-  const norm = (t) => t.replace(/\s+/g, '').toLowerCase();
+    for (const r of rules) {
+      if (r.tests.some(k => t.includes(k))) return r;
+    }
+    return null;
+  }
 
-  // --------- 음성합성(선택) ----------
   function speak(text) {
+    if (!USE_TTS || !window.speechSynthesis) return;
     try {
-      if (!synth) return;
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'ko-KR';
       u.rate = 1.0;
@@ -68,129 +111,92 @@
     } catch (_) {}
   }
 
-  // --------- 인식기 ----------
-  const rec = new SpeechRecognition();
-  rec.lang = 'ko-KR';
-  rec.interimResults = false;
-  rec.continuous = false; // 브라우저 특성상 end에서 재시작 루프
-
-  rec.addEventListener('result', (evt) => {
-    const text = evt.results[0][0].transcript.trim();
-    const n = norm(text);
-    // console.log('[ASR]', text);
-
-    if (mode === 'passive') {
-      // 웨이크워드 감지
-      if (wakeWords.some(w => n.includes(norm(w)))) {
-        statusBox.textContent = '웨이크워드 감지 → 명령 대기';
-        speak('네, 말씀하세요.');
-        switchToCommandMode();
-      } else {
-        statusBox.textContent = '대기 중(웨이크워드 인식 실패)';
-      }
-    } else if (mode === 'command') {
-      // 명령 해석
-      const hit = commands.find(c => c.test(n));
-      if (hit) {
-        statusBox.textContent = '이동: ' + hit.go;
-        speak('이동합니다.');
-        // 약간의 지연 후 이동(합성 겹침 방지)
-        setTimeout(() => { window.location.href = hit.go; }, 200);
-      } else {
-        statusBox.textContent = `명령 인식 못함: ${text}`;
-        speak('다시 말씀해 주세요.');
-        // 명령 모드 유지(타임아웃 동안)
-        restart();
-      }
-    }
+  // 이벤트
+  rec.addEventListener('start', () => {
+    listening = true;
+    setBadge(true);
+    elState.textContent = '상태: 듣는 중(명령 대기)';
+    log('listening start');
+    btn.textContent = '🛑 음성 명령 끄기';
+    btn.style.opacity = '0.8';
   });
 
   rec.addEventListener('end', () => {
     listening = false;
-    // mode에 따라 자동 재시작
-    if (mode === 'passive' || mode === 'command') {
-      restart();
+    setBadge(false);
+    elState.textContent = '상태: 종료됨(자동 재시작)';
+    log('listening end → auto restart');
+    // 일부 브라우저는 자동 재시작 필요
+    if (btn.dataset.on === '1') {
+      try { rec.start(); } catch (_) {}
     } else {
-      statusBox.textContent = '대기 꺼짐';
-      micBtn.textContent = '🎤 음성 켜기';
-      micBtn.style.opacity = '1';
+      btn.textContent = '🎤 음성 명령 켜기';
+      btn.style.opacity = '1';
+      elState.textContent = '상태: 대기';
     }
   });
 
   rec.addEventListener('error', (e) => {
-    statusBox.textContent = '에러: ' + e.error;
-    // 네트워크/권한 이슈 등은 사용자가 다시 버튼으로 재시작
-    listening = false;
+    log('error: ' + e.error);
+    elState.textContent = '에러: ' + e.error;
+    setBadge(false);
   });
 
-  // --------- 모드 전환 & 재시작 ----------
-  function restart() {
-    if (listening) return;
-    try {
-      rec.start();
-      listening = true;
-      micBtn.style.opacity = '0.7';
-      if (mode === 'passive') statusBox.textContent = '🎙️ 웨이크워드 대기 중…';
-      if (mode === 'command') statusBox.textContent = '🎙️ 명령 대기 중…';
-    } catch (_) {
-      // start() 중복 호출 등 에러시 무시
+  rec.addEventListener('result', (evt) => {
+    let interim = '';
+    let final = '';
+
+    for (let i = evt.resultIndex; i < evt.results.length; i++) {
+      const r = evt.results[i];
+      if (r.isFinal) {
+        final = r[0].transcript.trim();
+        const conf = (r[0].confidence * 100).toFixed(1);
+        elLast.textContent  = `마지막 결과: "${final}" (conf ${conf}%)`;
+        elInter.textContent = '(interim 없음)';
+        log(`final: "${final}" (${conf}%)`);
+
+        const match = routeFor(final);
+        if (match) {
+          elMatch.textContent = `매칭: ${match.name} → ${match.go}`;
+          speak(`${match.name === 'HOME' ? '홈으로' :
+                 match.name === 'SCAN' ? '약 투입 페이지로' :
+                 match.name === 'MEDS' ? '현재 있는 약 페이지로' :
+                 '대화 페이지로'} 이동합니다.`);
+          log(`navigate → ${match.go}`);
+          setTimeout(() => { window.location.href = match.go; }, 150);
+        } else {
+          elMatch.textContent = '매칭: (없음) 규칙 불일치';
+          speak('명령을 이해하지 못했어요. 다시 말씀해 주세요.');
+        }
+      } else {
+        interim += r[0].transcript;
+      }
     }
-  }
 
-  function switchToPassiveMode() {
-    mode = 'passive';
-    clearTimeout(commandTimeoutId);
-    commandTimeoutId = null;
-    restart();
-  }
-
-  function switchToCommandMode() {
-    mode = 'command';
-    clearTimeout(commandTimeoutId);
-    // 8초 동안 명령을 기다렸다가 자동 복귀
-    commandTimeoutId = setTimeout(() => {
-      speak('대기 모드로 돌아갑니다.');
-      switchToPassiveMode();
-    }, 8000);
-    restart();
-  }
-
-  function startAll() {
-    // 최초 1회: 사용자 제스처로 권한 취득 필요
-    mode = 'passive';
-    statusBox.textContent = '권한 요청 중…';
-    try {
-      rec.start();
-      listening = true;
-      micBtn.textContent = '🎤 대기 중(끄려면 클릭)';
-      micBtn.style.opacity = '0.7';
-      statusBox.textContent = '🎙️ 웨이크워드 대기 중…';
-    } catch (e) {
-      statusBox.textContent = '마이크 시작 실패. 다시 눌러주세요.';
+    if (interim) {
+      elInter.textContent = `interim: ${interim}`;
+      log(`interim: ${interim}`);
     }
-  }
-
-  function stopAll() {
-    mode = 'idle';
-    clearTimeout(commandTimeoutId);
-    commandTimeoutId = null;
-    try { rec.stop(); } catch (_) {}
-    listening = false;
-    micBtn.textContent = '🎤 음성 켜기';
-    micBtn.style.opacity = '1';
-    statusBox.textContent = '대기 꺼짐';
-  }
+  });
 
   // 버튼 토글
-  micBtn.addEventListener('click', () => {
-    if (mode === 'idle') startAll();
-    else stopAll();
-  });
-
-  // (선택) 페이지 진입 시 안내 토스트
-  setTimeout(() => {
-    if (mode === 'idle') {
-      statusBox.textContent = '버튼을 눌러 음성 대기를 켜세요';
+  btn.addEventListener('click', () => {
+    if (btn.dataset.on === '1') {
+      btn.dataset.on = '0';
+      try { rec.stop(); } catch (_) {}
+      speak('음성 명령을 종료합니다.');
+      setBadge(false);
+      btn.textContent = '🎤 음성 명령 켜기';
+      btn.style.opacity = '1';
+      elState.textContent = '상태: 대기';
+    } else {
+      btn.dataset.on = '1';
+      elState.textContent = '상태: 시작 시도(권한 필요)';
+      speak('음성 명령을 시작합니다.');
+      try { rec.start(); } catch (e) {
+        elState.textContent = '상태: 시작 실패 — 다시 눌러주세요';
+        log('start failed: ' + e.message);
+      }
     }
-  }, 1200);
+  });
 })();

@@ -17,6 +17,7 @@
     <div class="input-row" style="margin-top:14px">
       <button id="startRtc" class="primary-btn">🎤 실시간 대화 시작</button>
       <button id="stopRtc" class="primary-btn" style="display:none;background:#888">🛑 종료</button>
+      <button id="openSummary" class="primary-btn">대화 요약</button>
     </div>
 
     <!-- 모델의 음성 출력 -->
@@ -28,5 +29,7 @@
 </section>
 
 <script src="{% static 'carepill/js/realtime_webrtc_chat.js' %}?v=20251007-1"></script>
+<script src="{% static 'carepill/js/summary_overlay.js' %}"></script>
+
 
 {% endblock %}

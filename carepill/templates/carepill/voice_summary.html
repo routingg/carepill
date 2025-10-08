@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}대화 요약 | CarePill{% endblock %}
+
+{% block extra_css %}
+<style>
+.section { max-width: 860px; margin: 32px auto; }
+.card { background:#fff; border:1px solid #eee; border-radius:12px; padding:16px; }
+.row { display:flex; gap:8px; margin-top:12px; }
+pre { white-space:pre-wrap; word-break:break-word; }
+.muted { color:#666; font-size:0.95rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section">
+  <h1>이번 대화 요약</h1>
+  <p class="muted">이번 대화에서 나눈 내용을 요약했어요. 저장할까요?</p>
+
+  <div id="summaryCard" class="card">
+    <div id="humanSummary" style="margin-bottom:12px;"></div>
+    <details>
+      <summary>JSON 미리보기</summary>
+      <pre id="jsonPreview">{}</pre>
+    </details>
+  </div>
+
+  <div class="row">
+    <button id="btnYes" class="primary-btn">예, 저장</button>
+    <button id="btnNo" class="primary-btn" style="background:#888">아니오</button>
+    <button id="btnMic" class="primary-btn" style="background:#555">음성 응답</button>
+  </div>
+
+  <p id="saveStatus" class="muted" style="margin-top:10px;"></p>
+</div>
+
+<script>
+(async function(){
+  // 1) 이전 페이지에서 넣어둔 transcript 가져오기
+  const transcript = JSON.parse(sessionStorage.getItem("carepill_transcript") || "[]");
+
+  // 2) 서버에 요약 요청
+  let summary = {};
+  try {
+    const r = await fetch("/api/conversation/summarize/", {
+      method:"POST", headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ transcript })
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "summarize_failed");
+    summary = j.summary || {};
+  } catch (e) {
+    document.getElementById("humanSummary").textContent = "요약 생성에 실패했습니다: " + e.message;
+    return;
+  }
+
+  // 3) 사람 읽기용 한 줄 요약 문장 만들어 표시
+  const topics = (summary.topics || []).join(", ");
+  const acts = (summary.action_items || []).map(a => `${a.who}:${a.what}${a.when?(" ("+a.when+")"):""}`).join(" · ");
+  const meds = (summary.meds || []).map(m => `${m.name}${m.dose?(" "+m.dose):""}${m.time?(" @"+m.time):""}`).join(" · ");
+  const risks = (summary.risks || []).join(", ");
+  const feelings = summary.feelings || "";
+
+  const human = [
+    topics ? `주요 주제: ${topics}` : "",
+    acts ? `액션아이템: ${acts}` : "",
+    meds ? `복약정보: ${meds}` : "",
+    risks ? `주의/위험: ${risks}` : "",
+    feelings ? `정서 톤: ${feelings}` : "",
+  ].filter(Boolean).join("\n");
+
+  document.getElementById("humanSummary").textContent = human || "요약 내용이 비어있습니다.";
+  document.getElementById("jsonPreview").textContent = JSON.stringify(summary, null, 2);
+
+  // 4) 저장/취소 버튼
+  const saveStatus = document.getElementById("saveStatus");
+  document.getElementById("btnYes").onclick = async () => {
+    saveStatus.textContent = "저장 중...";
+    const meta = { 
+      title: (topics || "carepill_session").slice(0,60),
+      ended_at: new Date().toISOString().replace(/[-:]/g,"").slice(0,15) // YYYYMMDDTHHMMSSZ 비슷
+    };
+    const r = await fetch("/api/conversation/save/", {
+      method:"POST", headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ summary, meta })
+    });
+    const j = await r.json();
+    if (r.ok && j.ok) {
+      saveStatus.textContent = "저장 완료: " + (j.path || "");
+    } else {
+      saveStatus.textContent = "저장 실패: " + (j.error || "unknown");
+    }
+  };
+  document.getElementById("btnNo").onclick = () => {
+    saveStatus.textContent = "저장을 취소했습니다.";
+  };
+
+  // 5) 음성(선택): 브라우저 Web Speech API로 '예/아니오' 인식
+  document.getElementById("btnMic").onclick = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("이 브라우저는 음성 인식을 지원하지 않습니다."); return; }
+    const rec = new SR();
+    rec.lang = "ko-KR";
+    rec.onresult = (e) => {
+      const said = (e.results[0][0].transcript || "").trim();
+      if (/^(예|네|응|맞아|저장)/.test(said)) document.getElementById("btnYes").click();
+      else if (/^(아니오|아니|노|취소)/.test(said)) document.getElementById("btnNo").click();
+      else saveStatus.textContent = `인식: "${said}" (예/아니오로 대답해 주세요)`;
+    };
+    rec.onerror = (e) => { saveStatus.textContent = "음성 인식 에러: " + (e.error || ""); };
+    rec.start();
+  };
+})();
+</script>
+{% endblock %}

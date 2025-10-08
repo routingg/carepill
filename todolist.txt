@@ -2,4 +2,14 @@
 [speech]
 1. speech_proto.py
 : 사용자 대화 전사 기능 추가 > 完
-: 이 기능 고대로 장고 voice로 옮기기
+: 이 기능 고대로 장고 voice로 옮기기 > 完
+
+
+2025.10.08.WED 下午 & 晚上
+[speech]
+1. view_speech.py
+: 중간에 말끊는거 처리
+2. 정보 발췌 시작
+
+[scan]
+: 연결하기

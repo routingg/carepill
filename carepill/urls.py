@@ -1,4 +1,5 @@
 from django.urls import path
+from .view_speech import voice_stream_view
 from . import views
 
 urlpatterns = [
@@ -6,6 +7,8 @@ urlpatterns = [
     path("scan/", views.scan, name="scan"),
     path("meds/", views.meds, name="meds"),
     path("voice/", views.voice, name="voice"),
+    
+    path("voice-stream/", voice_stream_view, name="voice_stream"),
 
-    path("api/realtime/session/", views.realtime_session, name="rt_session"),
+    
 ]

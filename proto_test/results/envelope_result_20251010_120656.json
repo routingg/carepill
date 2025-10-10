@@ -1,0 +1,161 @@
+{
+  "analysis_type": "envelope",
+  "shots": [
+    {
+      "image_path": "captures\\envelope_crop_20251010_120656_1.jpg",
+      "raw": "{\n  \"patient_name\": \"김시원님\",\n  \"age\": \"0\",\n  \"dispense_date\": \"2023-09-22\",\n  \"pharmacy_name\": \"환승센터약국\",\n  \"prescription_number\": \"8336400327\",\n  \"medicine_name\": \"레티리진(레보세티리진염산염)\",\n  \"dosage_instructions\": \"아침, 저녁, 취침 전\",\n  \"frequency\": \"1일 1회 총 30일분\",\n  \"med_features\": {\n    \"description\": \"\",\n    \"indications\": \"\",\n    \"cautions\": \"\"\n  }\n}",
+      "json": {
+        "patient_name": "김시원님",
+        "age": "0",
+        "dispense_date": "2023-09-22",
+        "pharmacy_name": "환승센터약국",
+        "prescription_number": "8336400327",
+        "medicine_name": "레티리진(레보세티리진염산염)",
+        "dosage_instructions": "아침, 저녁, 취침 전",
+        "frequency": "1일 1회 총 30일분",
+        "med_features": {
+          "description": "",
+          "indications": "",
+          "cautions": ""
+        }
+      }
+    },
+    {
+      "image_path": "captures\\envelope_crop_20251010_120656_2.jpg",
+      "raw": "{\n  \"patient_name\": \"김시원\",\n  \"age\": \"\",\n  \"dispense_date\": \"2025-08-23\",\n  \"pharmacy_name\": \"환승센터약국\",\n  \"prescription_number\": \"2025.09.22\",\n  \"medicine_name\": \"레티나정(레보세티리진염산염) 5mg\",\n  \"dosage_instructions\": \"아침, 저녁, 취침 전\",\n  \"frequency\": \"1일 1회 총 30일분\",\n  \"med_features\": {\n    \"description\": \"\",\n    \"indications\": \"\",\n    \"cautions\": \"\"\n  }\n}",
+      "json": {
+        "patient_name": "김시원",
+        "age": "",
+        "dispense_date": "2025-08-23",
+        "pharmacy_name": "환승센터약국",
+        "prescription_number": "2025.09.22",
+        "medicine_name": "레티나정(레보세티리진염산염) 5mg",
+        "dosage_instructions": "아침, 저녁, 취침 전",
+        "frequency": "1일 1회 총 30일분",
+        "med_features": {
+          "description": "",
+          "indications": "",
+          "cautions": ""
+        }
+      }
+    },
+    {
+      "image_path": "captures\\envelope_crop_20251010_120656_3.jpg",
+      "raw": "{\n  \"patient_name\": \"김시원\",\n  \"age\": \"34\",\n  \"dispense_date\": \"2023-08-23\",\n  \"pharmacy_name\": \"환승센터약국\",\n  \"prescription_number\": \"2025.09.22\",\n  \"medicine_name\": \"레티리진 레보세티리진염산염\",\n  \"dosage_instructions\": \"아침, 저녁, 취침 전\",\n  \"frequency\": \"1일 1회 총 30일분\",\n  \"med_features\": {\n    \"description\": \"알레르기 비염 치료제\",\n    \"indications\": \"알레르기 비염\",\n    \"cautions\": \"졸음 유발 가능, 알코올과 병용 주의\"\n  }\n}",
+      "json": {
+        "patient_name": "김시원",
+        "age": "34",
+        "dispense_date": "2023-08-23",
+        "pharmacy_name": "환승센터약국",
+        "prescription_number": "2025.09.22",
+        "medicine_name": "레티리진 레보세티리진염산염",
+        "dosage_instructions": "아침, 저녁, 취침 전",
+        "frequency": "1일 1회 총 30일분",
+        "med_features": {
+          "description": "알레르기 비염 치료제",
+          "indications": "알레르기 비염",
+          "cautions": "졸음 유발 가능, 알코올과 병용 주의"
+        }
+      }
+    }
+  ],
+  "merged": {
+    "patient_name": "김시원",
+    "age": "34",
+    "dispense_date": "2023-09-22",
+    "pharmacy_name": "환승센터약국",
+    "prescription_number": "20250922",
+    "medicine_name": "레티나정(레보세티리진염산염) 5mg",
+    "dosage_instructions": "아침, 저녁, 취침 전",
+    "frequency": "1일 1회 총 30일분",
+    "med_features": {
+      "description": "알레르기 비염 치료제",
+      "indications": "알레르기 비염",
+      "cautions": "졸음 유발 가능, 알코올과 병용 주의"
+    }
+  },
+  "diagnostics": {
+    "patient_name": {
+      "per_shot": [
+        "김시원님",
+        "김시원",
+        "김시원"
+      ],
+      "selected": "김시원",
+      "confidence": 0.667
+    },
+    "age": {
+      "per_shot": [
+        "0",
+        "",
+        "34"
+      ],
+      "normalized": [
+        "0",
+        "",
+        "34"
+      ],
+      "selected": "34",
+      "confidence": 0.333
+    },
+    "dispense_date": {
+      "per_shot": [
+        "2023-09-22",
+        "2025-08-23",
+        "2023-08-23"
+      ],
+      "selected": "2023-09-22",
+      "confidence": 0.333
+    },
+    "pharmacy_name": {
+      "per_shot": [
+        "환승센터약국",
+        "환승센터약국",
+        "환승센터약국"
+      ],
+      "selected": "환승센터약국",
+      "confidence": 1.0
+    },
+    "prescription_number": {
+      "per_shot": [
+        "8336400327",
+        "2025.09.22",
+        "2025.09.22"
+      ],
+      "digits_only": [
+        "8336400327",
+        "20250922",
+        "20250922"
+      ],
+      "selected": "20250922",
+      "confidence": 0.667
+    },
+    "medicine_name": {
+      "per_shot": [
+        "레티리진(레보세티리진염산염)",
+        "레티나정(레보세티리진염산염) 5mg",
+        "레티리진 레보세티리진염산염"
+      ],
+      "selected": "레티나정(레보세티리진염산염) 5mg",
+      "confidence": 0.333
+    },
+    "dosage_instructions": {
+      "per_shot": [
+        "아침, 저녁, 취침 전",
+        "아침, 저녁, 취침 전",
+        "아침, 저녁, 취침 전"
+      ],
+      "selected": "아침, 저녁, 취침 전",
+      "confidence": 1.0
+    },
+    "frequency": {
+      "per_shot": [
+        "1일 1회 총 30일분",
+        "1일 1회 총 30일분",
+        "1일 1회 총 30일분"
+      ],
+      "selected": "1일 1회 총 30일분",
+      "confidence": 1.0
+    }
+  }
+}

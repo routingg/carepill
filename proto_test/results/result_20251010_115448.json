@@ -1,0 +1,79 @@
+{
+  "analysis_type": "envelope",
+  "shots": [
+    {
+      "image_path": "captures\\capture_20251010_115448_1.jpg",
+      "raw": "{\n  \"medicine_name\": \"레티잔정\",\n  \"dosage_instructions\": \"아침, 저녁, 취침 전\",\n  \"frequency\": \"1일 1회 총 30일분\",\n  \"prescription_number\": \"2025.08.23\"\n}",
+      "json": {
+        "medicine_name": "레티잔정",
+        "dosage_instructions": "아침, 저녁, 취침 전",
+        "frequency": "1일 1회 총 30일분",
+        "prescription_number": "2025.08.23"
+      }
+    },
+    {
+      "image_path": "captures\\capture_20251010_115448_2.jpg",
+      "raw": "{\n  \"medicine_name\": \"레티진정(레보세티리진염산염)\",\n  \"dosage_instructions\": \"아침, 저녁, 취침 전\",\n  \"frequency\": \"1일 1회 총 30일분\",\n  \"prescription_number\": \"8336400324\"\n}",
+      "json": {
+        "medicine_name": "레티진정(레보세티리진염산염)",
+        "dosage_instructions": "아침, 저녁, 취침 전",
+        "frequency": "1일 1회 총 30일분",
+        "prescription_number": "8336400324"
+      }
+    },
+    {
+      "image_path": "captures\\capture_20251010_115448_3.jpg",
+      "raw": "{\n  \"medicine_name\": \"레티지정(레보세티리진염산염) 5mg\",\n  \"dosage_instructions\": \"아침, 저녁, 취침 전\",\n  \"frequency\": \"1일 1회\",\n  \"prescription_number\": \"8336400324\"\n}",
+      "json": {
+        "medicine_name": "레티지정(레보세티리진염산염) 5mg",
+        "dosage_instructions": "아침, 저녁, 취침 전",
+        "frequency": "1일 1회",
+        "prescription_number": "8336400324"
+      }
+    }
+  ],
+  "merged": {
+    "frequency": "1일 1회 총 30일분",
+    "prescription_number": "8336400324",
+    "medicine_name": "레티지정(레보세티리진염산염) 5mg",
+    "dosage_instructions": "아침, 저녁, 취침 전"
+  },
+  "diagnostics": {
+    "frequency": {
+      "per_shot": [
+        "1일 1회 총 30일분",
+        "1일 1회 총 30일분",
+        "1일 1회"
+      ],
+      "selected": "1일 1회 총 30일분",
+      "confidence": 0.667
+    },
+    "prescription_number": {
+      "per_shot": [
+        "2025.08.23",
+        "8336400324",
+        "8336400324"
+      ],
+      "selected": "8336400324",
+      "confidence": 0.667
+    },
+    "medicine_name": {
+      "per_shot": [
+        "레티잔정",
+        "레티진정(레보세티리진염산염)",
+        "레티지정(레보세티리진염산염) 5mg"
+      ],
+      "selected": "레티지정(레보세티리진염산염) 5mg",
+      "confidence": 0.333
+    },
+    "dosage_instructions": {
+      "per_shot": [
+        "아침, 저녁, 취침 전",
+        "아침, 저녁, 취침 전",
+        "아침, 저녁, 취침 전"
+      ],
+      "selected": "아침, 저녁, 취침 전",
+      "confidence": 1.0
+    }
+  }
+}

@@ -1,39 +1,209 @@
+
 {% extends "base.html" %}
 {% load static %}
 {% block title %}약 투입 | CarePill{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'carepill/css/scan.css' %}">
+<style>
+  .scan-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:start}
+  .cams{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .cam-wrap{position:relative;background:#111;border-radius:16px;overflow:hidden;min-height:220px}
+  video{width:100%;height:auto;display:block}
+  .roi{position:absolute;border:3px solid #36d399;inset:auto;pointer-events:none}
+  .label{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.6);color:#fff;padding:4px 8px;border-radius:8px;font-size:12px}
+  .hud{margin-top:6px;color:#555;font-size:14px}
+  .controls{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+  .btn{padding:10px 14px;border-radius:10px;border:1px solid #ddd;background:#fff;font-weight:600;cursor:pointer}
+  .btn.primary{background:#111;color:#fff;border-color:#111}
+  .selrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .selrow select{width:100%;padding:8px;border-radius:8px;border:1px solid #ddd}
+  .thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
+  .thumb-col{border:1px solid #eee;border-radius:12px;padding:8px;background:#fafafa}
+  .thumb-col h4{margin:0 0 6px 0;font-size:14px}
+  .thumb-list{display:flex;gap:8px;flex-wrap:wrap}
+  .thumb-list img{width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #ddd}
+  .result-card{background:#fff;border:1px solid #eee;border-radius:16px;padding:16px}
+  .data-table{width:100%;border-collapse:collapse}
+  .data-table th,.data-table td{border-bottom:1px solid #eee;padding:8px 10px;text-align:left}
+  .progress{height:8px;background:#f3f3f3;border-radius:999px;overflow:hidden;margin:10px 0}
+  .bar{height:100%;width:0;background:#36d399;transition:width .3s}
+  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:12px;white-space:pre-wrap;background:#0b1020;color:#CBE1FF;padding:10px;border-radius:10px}
+</style>
 {% endblock %}
 
 {% block content %}
-
 <section class="page-section">
-  <h1 class="page-title">약 투입 (스캔)</h1>
-  <p class="page-desc">약봉지를 업로드하면 자동으로 인식됩니다.</p>
+  <h1 class="page-title">약 투입 (동시 3캠 스캔)</h1>
+  <p class="page-desc">최대 3대의 카메라를 동시에 켜고, 각 화면에서 ROI 영역만 3연사 동시 캡처합니다.</p>
 
-  <form class="upload-box" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="file" name="image" id="fileInput" accept="image/*,.pdf">
-    <button type="submit" class="primary-btn">업로드</button>
-  </form>
+  <div class="scan-grid">
+    <div>
+      <div class="selrow">
+        <select id="sel1"><option>카메라1 미선택</option></select>
+        <select id="sel2"><option>카메라2 미선택</option></select>
+        <select id="sel3"><option>카메라3 미선택</option></select>
+      </div>
 
-  <div class="progress">
-    <div class="bar" style="width:30%"></div>
+      <div class="cams" style="margin-top:12px">
+        <div class="cam-wrap">
+          <video id="cam1" autoplay playsinline muted></video>
+          <div class="roi" id="roi1"></div>
+          <div class="label">카메라 1</div>
+        </div>
+        <div class="cam-wrap">
+          <video id="cam2" autoplay playsinline muted></video>
+          <div class="roi" id="roi2"></div>
+          <div class="label">카메라 2</div>
+        </div>
+        <div class="cam-wrap">
+          <video id="cam3" autoplay playsinline muted></video>
+          <div class="roi" id="roi3"></div>
+          <div class="label">카메라 3</div>
+        </div>
+      </div>
+      <div class="hud">ROI 안에 약봉투를 정렬하세요. [S] 동시 촬영(3캠×3연사), [Esc] 중지</div>
+
+      <div class="controls">
+        <button class="btn" id="btnEnum">카메라 새로고침</button>
+        <button class="btn" id="btnStartAll">모두 시작</button>
+        <button class="btn primary" id="btnShoot">동시 촬영(3×3)</button>
+        <button class="btn" id="btnStopAll">모두 중지</button>
+      </div>
+
+      <div class="thumbs" id="thumbs">
+        <div class="thumb-col" id="col1"><h4>카메라 1</h4><div class="thumb-list" id="list1"></div></div>
+        <div class="thumb-col" id="col2"><h4>카메라 2</h4><div class="thumb-list" id="list2"></div></div>
+        <div class="thumb-col" id="col3"><h4>카메라 3</h4><div class="thumb-list" id="list3"></div></div>
+      </div>
+      <div class="progress"><div class="bar" id="prog"></div></div>
+    </div>
+
+    <div class="result-card">
+      <h2>결과</h2>
+      <table class="data-table" id="tbl"></table>
+      <h3 style="margin-top:16px">원시 응답(요약)</h3>
+      <div class="mono" id="raw"></div>
+    </div>
   </div>
 
-  <div class="result-box">
-    <h2>결과</h2>
-    <table class="data-table">
-      <thead>
-        <tr><th>항목</th><th>값</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>약명</td><td>타이레놀 500</td></tr>
-        <tr><td>용법</td><td>1일 3회 1정</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <details style="margin-top:16px">
+    <summary>파일 업로드로 분석하기</summary>
+    <form id="uploadForm" class="upload-box" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" name="image" id="fileInput" accept="image/*,.pdf">
+      <button type="submit" class="btn">업로드 분석</button>
+    </form>
+  </details>
 </section>
 
+<script>
+(function(){
+  const $ = (id)=>document.getElementById(id);
+  const vids=[$("cam1"),$("cam2"),$("cam3")];
+  const rois=[$("roi1"),$("roi2"),$("roi3")];
+  const sels=[$("sel1"),$("sel2"),$("sel3")];
+  const lists=[$("list1"),$("list2"),$("list3")];
+  const btnEnum=$("btnEnum"), btnStartAll=$("btnStartAll"), btnStopAll=$("btnStopAll"), btnShoot=$("btnShoot");
+  const prog=$("prog"), tbl=$("tbl"), raw=$("raw");
+  let streams=[null,null,null];
+  let devices=[];
+
+  async function enumerateCams(){
+    try{ await navigator.mediaDevices.getUserMedia({video:true,audio:false}).then(s=>s.getTracks().forEach(t=>t.stop())); }catch(e){}
+    const all=await navigator.mediaDevices.enumerateDevices();
+    devices=all.filter(d=>d.kind==='videoinput');
+    const opts=['<option value="">카메라 미선택</option>'].concat(
+      devices.map((d,i)=>`<option value="${d.deviceId}">${d.label||('Camera '+(i+1))}</option>`)
+    ).join('');
+    sels.forEach((sel,i)=>{ sel.innerHTML=opts; if(devices[i]) sel.value=devices[i].deviceId; });
+  }
+
+  function layoutROI(){
+    rois.forEach((roi,i)=>{
+      const v=vids[i]; if(!v) return;
+      const rW=0.70, rH=0.55, rX=0.15, rY=0.20;
+      const rect=v.getBoundingClientRect();
+      roi.style.left=(rect.width*rX)+"px";
+      roi.style.top=(rect.height*rY)+"px";
+      roi.style.width=(rect.width*rW)+"px";
+      roi.style.height=(rect.height*rH)+"px";
+    });
+  }
+  window.addEventListener('resize', layoutROI);
+
+  async function startOneCam(idx){
+    const devId=sels[idx].value; if(!devId){ return; }
+    if(streams[idx]){ streams[idx].getTracks().forEach(t=>t.stop()); streams[idx]=null; vids[idx].srcObject=null; }
+    const s=await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:devId}},audio:false});
+    streams[idx]=s; vids[idx].srcObject=s; await new Promise(r=>vids[idx].onloadedmetadata=r); vids[idx].play(); layoutROI();
+  }
+
+  async function startAll(){ await Promise.all([startOneCam(0),startOneCam(1),startOneCam(2)]); }
+  function stopAll(){ streams.forEach((s,i)=>{ if(s){ s.getTracks().forEach(t=>t.stop()); streams[i]=null; vids[i].srcObject=null; }}); }
+
+  function captureFrom(idx){
+    const v=vids[idx], roi=rois[idx]; if(!v || !v.videoWidth) return null;
+    const r=roi.getBoundingClientRect(); const vrect=v.getBoundingClientRect();
+    const sx=(r.left-vrect.left)/vrect.width, sy=(r.top-vrect.top)/vrect.height;
+    const sw=r.width/vrect.width, sh=r.height/vrect.height;
+    const vw=v.videoWidth, vh=v.videoHeight;
+    const cx=Math.floor(vw*sx), cy=Math.floor(vh*sy); const cw=Math.floor(vw*sw), ch=Math.floor(vh*sh);
+    const c=document.createElement('canvas'); c.width=cw; c.height=ch; const ctx=c.getContext('2d');
+    ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
+    return c.toDataURL('image/jpeg', 0.95);
+  }
+
+  async function shootSimul(){
+    lists.forEach(l=>l.innerHTML=''); raw.textContent=''; tbl.innerHTML=''; prog.style.width='5%';
+    const activeIdx=[0,1,2].filter(i=>!!streams[i]);
+    if(activeIdx.length===0){ alert('먼저 카메라를 시작하세요.'); return; }
+
+    const allB64=[]; const meta=[];
+    for(let shot=1; shot<=3; shot++){
+      // 동시 캡처: 각 활성 캠에서 같은 타임스텝으로 캡처
+      const snaps=activeIdx.map(i=>({idx:i, durl:captureFrom(i)}));
+      snaps.forEach(({idx,durl})=>{
+        if(!durl) return; const b64=durl.replace(/^data:image\/(png|jpeg);base64,/,'');
+        allB64.push(b64); meta.push({camera_index:idx+1, shot_index:shot, deviceId:sels[idx].value});
+        const img=new Image(); img.src=durl; lists[idx].appendChild(img);
+      });
+      prog.style.width=(shot*25)+'%';
+      await new Promise(r=>setTimeout(r,500));
+    }
+    prog.style.width='80%';
+
+    const res = await fetch('{% url "api_scan_envelope" %}',{
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},
+      body: JSON.stringify({ images: allB64, meta: meta })
+    });
+    const data = await res.json();
+    prog.style.width='100%';
+    if(!res.ok){ raw.textContent = JSON.stringify(data,null,2); return; }
+
+    const m = data.merged || {};
+    const rows = [
+      ['환자명','patient_name'],['나이','age'],['조제일자','dispense_date'],['약국명','pharmacy_name'],
+      ['처방/조제번호','prescription_number'],['약품명','medicine_name'],['복용법','dosage_instructions'],['기간/횟수','frequency'],
+      ['한줄설명','med_features.description'],['적응증','med_features.indications'],['주의사항','med_features.cautions']
+    ];
+    tbl.innerHTML = '<thead><tr><th>항목</th><th>값</th></tr></thead><tbody>'+
+      rows.map(([k,path])=>{ const val=path.split('.').reduce((o,p)=>o?.[p], m)||''; return `<tr><td>${k}</td><td>${val}</td></tr>`; }).join('')+
+      '</tbody>';
+    raw.textContent = JSON.stringify(data,null,2);
+  }
+
+  // 이벤트 바인딩
+  btnEnum.onclick=enumerateCams;
+  btnStartAll.onclick=startAll;
+  btnStopAll.onclick=stopAll;
+  btnShoot.onclick=shootSimul;
+  document.addEventListener('keydown',(ev)=>{ if(ev.key==='s'||ev.key==='S'){ shootSimul(); } if(ev.key==='Escape'){ stopAll(); }});
+
+  // 초기화: 디바이스 나열 후 자동 시작
+  (async()=>{ await enumerateCams(); await startAll(); })();
+})();
+</script>
 {% endblock %}
+
+
+

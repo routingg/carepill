@@ -16,8 +16,12 @@ urlpatterns = [
     path("api/conversation/download/", views.api_conversation_download),
 
     path("api/scan/envelope/", views.api_scan_envelope, name="api_scan_envelope"),
-    
-    ]
+
+    # ElevenLabs 음성 관련 API
+    path("voice/setup/", views.voice_setup, name="voice_setup"),
+    path("api/voice/upload/", views.api_voice_upload, name="api_voice_upload"),
+    path("api/tts/", views.api_text_to_speech, name="api_text_to_speech"),
+]
 
 
 

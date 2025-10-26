@@ -4,6 +4,23 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'carepill/css/meds.css' %}">
+<style>
+  .read-btn {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+  }
+  .read-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -16,12 +33,26 @@
     <div class="info-card">
       <h3>타이레놀 500</h3>
       <p>해열·진통제 | 1회 1정, 1일 3회</p>
+      <button class="read-btn" onclick="readMedicine('타이레놀 500', '해열 진통제입니다. 1회 1정, 1일 3회 복용하세요.')">🔊 약 정보 듣기</button>
     </div>
     <div class="info-card">
       <h3>가스터 10mg</h3>
       <p>소화기계 약 | 식후 30분</p>
+      <button class="read-btn" onclick="readMedicine('가스터 10mg', '소화기계 약입니다. 식후 30분에 복용하세요.')">🔊 약 정보 듣기</button>
     </div>
   </div>
 </section>
+
+<script src="{% static 'carepill/js/tts_helper.js' %}"></script>
+<script>
+  function readMedicine(name, info) {
+    if (window.CarePillTTS) {
+      const message = `${name}. ${info}`;
+      window.CarePillTTS.speak(message);
+    } else {
+      alert('음성 기능을 사용할 수 없습니다.');
+    }
+  }
+</script>
 
 {% endblock %}

@@ -133,6 +133,9 @@ TEMPLATES[0]["DIRS"] = [BASE_DIR / "templates"]
 
 STATIC_URL = "/static/"
 
+# Media files (업로드된 파일)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

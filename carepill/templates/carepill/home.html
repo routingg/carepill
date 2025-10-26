@@ -13,7 +13,16 @@
   <section class="hero-card">
     <h1 class="hero-title">CARE PILL</h1>
     <p class="hero-sub">당신의 복약을 더 쉽고, 더 안전하게</p>
+
+    <!-- 음성 등록 버튼 (중간 크기) -->
+    <div class="voice-setup-section">
+      <a class="voice-setup-btn" href="/voice/setup/">
+        <span class="icon">🎙️</span>
+        <span class="text">나의 음성 등록하기</span>
+      </a>
+    </div>
   </section>
+
   <section class="tile-grid">
     <a class="tile tile-blue" href="/scan/">
       <h3>약 투입</h3>
@@ -35,5 +44,6 @@
     <p id="voiceResult" class="voice-result">음성을 인식하려면 버튼을 누르세요</p>
   </div>
 
+  <script src="{% static 'carepill/js/tts_helper.js' %}"></script>
   <script src="{% static 'carepill/js/voice_control.js' %}"></script>
 {% endblock %}

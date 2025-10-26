@@ -151,6 +151,34 @@
     printedResponseIds.clear();
   }
 
+  // ===== ElevenLabs TTS 재생 =====
+  async function playElevenLabsTTS(text) {
+    if (!text || !text.trim()) return;
+
+    try {
+      const response = await fetch('/api/tts/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.trim() })
+      });
+
+      if (!response.ok) {
+        console.error('TTS 변환 실패:', response.status);
+        return;
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      audio.onended = () => URL.revokeObjectURL(audioUrl);
+      audio.play().catch(err => console.error('TTS 재생 오류:', err));
+
+    } catch (err) {
+      console.error('TTS API 호출 오류:', err);
+    }
+  }
+
   // ===== DC message (심플: 완료 이벤트만 텍스트로 찍기) =====
   function handleDCMessage(raw) {
     let msg; try { msg = JSON.parse(raw); } catch { return; }
@@ -169,28 +197,46 @@
     if (t === "input_audio_buffer.speech_started") { logEvt("input_audio_buffer.speech_started"); return; }
     if (t === "input_audio_buffer.speech_stopped") { logEvt("input_audio_buffer.speech_stopped"); return; }
 
-    // CarePill 응답: 한 응답당 1번만 출력(완료 기준)
+    // CarePill 응답: 한 응답당 1번만 출력(완료 기준) + ElevenLabs TTS 재생
     if (t.startsWith("response.")) {
       const id = (msg.response && msg.response.id) || null;
 
-      // 오디오 자막이 있으면 그걸 우선 사용 (보통 가장 자연스러운 문장)
-      if (t === "response.audio_transcript.done") {
+      // 텍스트 응답 완료 시 (modalities: ["text"]로 변경했으므로)
+      // response.done만 처리 (다른 .done 이벤트는 제외)
+      if (t === "response.done") {
         if (id && printedResponseIds.has(id)) return;
-        const text = msg.transcript || msg.text || msg.output_text || "";
-        if (text) {
-          appendLine("carepill:", text.trim(), "assistant");
-          if (id) printedResponseIds.add(id);
-        }
-        return;
-      }
 
-      // 일반 완료
-      if (t === "response.done" || t.endsWith(".completed") || t.endsWith(".done")) {
-        if (id && printedResponseIds.has(id)) return;
-        const text = msg.output_text || msg.text || msg.content || "";
+        // 텍스트 추출 (여러 경로 시도)
+        let text = "";
+
+        // response.output에서 텍스트 추출
+        if (msg.response && msg.response.output) {
+          const outputs = msg.response.output;
+          for (const output of outputs) {
+            if (output.type === "message" && output.content) {
+              for (const content of output.content) {
+                if (content.type === "text" && content.text) {
+                  text = content.text;
+                  break;
+                }
+              }
+            }
+            if (text) break;
+          }
+        }
+
+        // 다른 경로 시도
+        if (!text) {
+          text = msg.output_text || msg.text || msg.content || "";
+        }
+
         if (text) {
-          appendLine("carepill:", String(text).trim(), "assistant");
+          const trimmedText = String(text).trim();
+          appendLine("carepill:", trimmedText, "assistant");
           if (id) printedResponseIds.add(id);
+
+          // ElevenLabs TTS로 재생
+          playElevenLabsTTS(trimmedText);
         }
         return;
       }

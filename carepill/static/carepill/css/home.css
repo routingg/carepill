@@ -1,6 +1,6 @@
 .hero-card {
   text-align: center;
-  padding: 110px 20px 80px;
+  padding: 110px 20px 60px;
 }
 .hero-title {
   font-size: 4.2rem;
@@ -13,6 +13,36 @@
   font-size: 1.35rem;
   color: #444;
   opacity: 0.9;
+  margin-bottom: 35px;
+}
+
+/* 음성 등록 버튼 (중간 크기) */
+.voice-setup-section {
+  margin-top: 35px;
+}
+.voice-setup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 40px;
+  background: linear-gradient(135deg, #ff9a56, #ff6b35);
+  color: white;
+  text-decoration: none;
+  border-radius: 50px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(255, 107, 53, 0.25);
+  transition: all 0.3s ease;
+}
+.voice-setup-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(255, 107, 53, 0.35);
+}
+.voice-setup-btn .icon {
+  font-size: 1.5rem;
+}
+.voice-setup-btn .text {
+  font-size: 1.15rem;
 }
 
 /* 메뉴 카드 */
@@ -83,6 +113,11 @@
 /* 반응형 */
 @media (max-width: 768px) {
   .hero-title { font-size: 3rem; }
+  .voice-setup-btn {
+    padding: 14px 30px;
+    font-size: 1.05rem;
+  }
+  .voice-setup-btn .icon { font-size: 1.3rem; }
   .tile-grid { gap: 20px; }
   .tile { padding: 45px 20px; }
   .tile h3 { font-size: 1.5rem; }

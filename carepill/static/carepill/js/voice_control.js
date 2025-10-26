@@ -101,14 +101,13 @@
   }
 
   function speak(text) {
-    if (!USE_TTS || !window.speechSynthesis) return;
-    try {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ko-KR';
-      u.rate = 1.0;
-      synth.cancel();
-      synth.speak(u);
-    } catch (_) {}
+    if (!USE_TTS) return;
+    // ElevenLabs TTS 사용 (브라우저 speechSynthesis 대신)
+    if (window.CarePillTTS) {
+      window.CarePillTTS.speak(text).catch(err => {
+        console.error('TTS 재생 실패:', err);
+      });
+    }
   }
 
   // 이벤트

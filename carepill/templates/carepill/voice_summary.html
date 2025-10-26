@@ -28,12 +28,14 @@ pre { white-space:pre-wrap; word-break:break-word; }
   <div class="row">
     <button id="btnYes" class="primary-btn">예, 저장</button>
     <button id="btnNo" class="primary-btn" style="background:#888">아니오</button>
+    <button id="btnRead" class="primary-btn" style="background:#4caf50">요약 읽기</button>
     <button id="btnMic" class="primary-btn" style="background:#555">음성 응답</button>
   </div>
 
   <p id="saveStatus" class="muted" style="margin-top:10px;"></p>
 </div>
 
+<script src="{% static 'carepill/js/tts_helper.js' %}"></script>
 <script>
 (async function(){
   // 1) 이전 페이지에서 넣어둔 transcript 가져오기
@@ -87,12 +89,29 @@ pre { white-space:pre-wrap; word-break:break-word; }
     const j = await r.json();
     if (r.ok && j.ok) {
       saveStatus.textContent = "저장 완료: " + (j.path || "");
+      if (window.CarePillTTS) {
+        window.CarePillTTS.speak("대화 내용을 저장했습니다.");
+      }
     } else {
       saveStatus.textContent = "저장 실패: " + (j.error || "unknown");
+      if (window.CarePillTTS) {
+        window.CarePillTTS.speak("저장에 실패했습니다.");
+      }
     }
   };
   document.getElementById("btnNo").onclick = () => {
     saveStatus.textContent = "저장을 취소했습니다.";
+    if (window.CarePillTTS) {
+      window.CarePillTTS.speak("저장을 취소했습니다.");
+    }
+  };
+
+  // 4-2) 요약 읽기 버튼: ElevenLabs TTS로 요약 내용 읽기
+  document.getElementById("btnRead").onclick = () => {
+    if (window.CarePillTTS) {
+      const readText = `대화 요약입니다. ${human || '요약 내용이 없습니다.'}`;
+      window.CarePillTTS.speak(readText);
+    }
   };
 
   // 5) 음성(선택): 브라우저 Web Speech API로 '예/아니오' 인식

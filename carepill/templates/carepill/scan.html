@@ -96,6 +96,7 @@
   </details>
 </section>
 
+<script src="{% static 'carepill/js/tts_helper.js' %}"></script>
 <script>
 (function(){
   const $ = (id)=>document.getElementById(id);
@@ -190,6 +191,14 @@
       rows.map(([k,path])=>{ const val=path.split('.').reduce((o,p)=>o?.[p], m)||''; return `<tr><td>${k}</td><td>${val}</td></tr>`; }).join('')+
       '</tbody>';
     raw.textContent = JSON.stringify(data,null,2);
+
+    // 스캔 성공 시 음성 안내
+    if (m.medicine_name) {
+      const message = `${m.medicine_name}이 스캔되었습니다. 약봉투를 삽입해주세요.`;
+      if (window.CarePillTTS) {
+        window.CarePillTTS.speak(message);
+      }
+    }
   }
 
   // 이벤트 바인딩

@@ -17,11 +17,11 @@ def issue_ephemeral(request):
         },
         json={
             "model": "gpt-4o-mini-realtime-preview-2024-12-17",
-            "voice": "verse",
-            "modalities": ["audio", "text"],
+            "voice": "verse",  # 사용 안 함 (ElevenLabs 사용)
+            "modalities": ["text"],  # 텍스트만 받음 (오디오는 ElevenLabs로)
             "turn_detection": {
-                "type": "server_vad", 
-                "create_response": True, 
+                "type": "server_vad",
+                "create_response": True,
                 "silence_duration_ms": 500
             },
             "input_audio_transcription": {"model": "gpt-4o-mini-transcribe"},
@@ -29,8 +29,9 @@ def issue_ephemeral(request):
                 "You are 'CarePill', a voice-based medication assistant designed to help visually impaired users. "
                 "Speak Korean with clear, precise pronunciation, like a professional news announcer. "
                 "Provide guidance about medication usage, dosage, timing, and potential drug interactions. "
-                "Offer emotional support and speak warmly, as if you are a trusted friend who cares about the user’s well-being. "
-                "Keep your responses short, calm, and friendly, delivering them with confidence and kindness."
+                "Offer emotional support and speak warmly, as if you are a trusted friend who cares about the user's well-being. "
+                "Keep your responses short, calm, and friendly, delivering them with confidence and kindness. "
+                "IMPORTANT: Your responses will be converted to speech using a custom voice clone, so write naturally as if speaking."
             ),
         },
         timeout=20,
@@ -446,30 +447,48 @@ from typing import List, Dict, Tuple
 import os
 import requests
 
-def _call_openai_envelope(image_b64: str, model: str = "gpt-4o-mini") -> str:
+def _call_openai_envelope(image_b64: str, model: str = "gpt-4o") -> str:
+    """
+    한국 약봉투 이미지를 OCR/분석하여 구조화된 JSON 추출
+    model: gpt-4o (고정확도) 또는 gpt-4o-mini (저비용)
+    """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY가 설정되지 않았습니다.")
 
     text_prompt = (
-        "다음 약봉투 이미지를 분석하여 아래 스키마의 정확한 JSON만 출력하세요.\n"
-        "가능하면 숫자/날짜는 포맷을 맞추세요.\n"
+        "당신은 한국 약봉투 OCR 전문가입니다. 아래 이미지에서 정확한 정보를 추출하세요.\n\n"
+        "**중요한 한국 약봉투 특징:**\n"
+        "- 환자명, 나이는 상단에 표시됨\n"
+        "- 조제일자는 'YYYY.MM.DD' 또는 'YYYY-MM-DD' 형식\n"
+        "- 약국명은 봉투 상단 또는 하단에 표시\n"
+        "- 처방전번호/조제번호는 숫자로 된 긴 코드\n"
+        "- 약품명은 여러 개일 수 있으며, 가장 주요한 약 하나를 선택\n"
+        "- 복용법: '1일 3회', '아침 저녁 식후 30분', '취침 전' 등\n"
+        "- 복용기간: '총 7일분', '30일분', '1회 복용' 등\n\n"
+        "**출력 형식 (반드시 유효한 JSON만, 코드펜스 없이):**\n"
         "{\n"
-        '  "patient_name": "환자명(문자열)",\n'
-        '  "age": "나이(숫자 또는 빈 문자열)",\n'
-        '  "dispense_date": "조제일자(YYYY-MM-DD 또는 YYYY.MM.DD)",\n'
-        '  "pharmacy_name": "약국명",\n'
-        '  "prescription_number": "처방전 또는 조제 번호",\n'
-        '  "medicine_name": "약품명",\n'
-        '  "dosage_instructions": "복용법(예: 아침, 저녁, 취침 전)",\n'
-        '  "frequency": "복용횟수/기간(예: 1일 1회 총 30일분)",\n'
+        '  "patient_name": "환자 이름",\n'
+        '  "age": "숫자만 (예: 45)",\n'
+        '  "dispense_date": "YYYY-MM-DD 형식",\n'
+        '  "pharmacy_name": "○○약국",\n'
+        '  "prescription_number": "처방/조제번호",\n'
+        '  "medicine_name": "주요 약품명 (여러 개면 대표 약 1개)",\n'
+        '  "dosage_instructions": "복용 시간과 방법",\n'
+        '  "frequency": "복용 횟수와 기간",\n'
         '  "med_features": {\n'
-        '    "description": "약의 한줄 설명",\n'
-        '    "indications": "어디에 좋은지(적응증)",\n'
-        '    "cautions": "주의사항(상호작용/부작용/주의대상 간단 요약)"\n'
+        '    "description": "약의 용도 한 줄 설명 (예: 해열진통제, 소화제)",\n'
+        '    "indications": "적응증 (두통, 발열, 소화불량 등)",\n'
+        '    "cautions": "주의사항 (공복 섭취 금지, 졸음 유발 등)"\n'
         "  }\n"
-        "}\n"
-        "주의: 오타를 피하고, 사진 속 정보만 사용하세요. 모를 경우 빈 문자열로 두세요. 설명 문장이나 코드펜스 없이 JSON만 출력합니다."
+        "}\n\n"
+        "**규칙:**\n"
+        "1. 이미지에서 명확히 보이는 정보만 입력\n"
+        "2. 불명확하거나 없는 정보는 빈 문자열 \"\" 사용\n"
+        "3. 날짜는 반드시 YYYY-MM-DD 형식으로 변환\n"
+        "4. 나이는 숫자만 추출\n"
+        "5. 설명 문구 없이 JSON만 출력\n"
+        "6. 코드펜스(```)는 사용하지 말 것"
     )
 
     payload = {
@@ -477,7 +496,12 @@ def _call_openai_envelope(image_b64: str, model: str = "gpt-4o-mini") -> str:
         "messages": [
             {
                 "role": "system",
-                "content": "너는 한국 약봉투 OCR/정보추출 전문가다. 반드시 유효한 JSON만 출력한다. 사진에 없는 정보는 공란('')으로 남긴다."
+                "content": (
+                    "당신은 한국 약국 처방전과 약봉투를 정확하게 읽는 OCR 전문가입니다. "
+                    "한글 약품명, 한국식 날짜 형식, 한국 약국 시스템을 완벽하게 이해합니다. "
+                    "반드시 유효한 JSON만 출력하며, 불명확한 정보는 빈 문자열로 처리합니다. "
+                    "이미지 품질이 낮거나 흐릿해도 최선을 다해 정보를 추출합니다."
+                )
             },
             {
                 "role": "user",
@@ -488,8 +512,8 @@ def _call_openai_envelope(image_b64: str, model: str = "gpt-4o-mini") -> str:
                 ]
             }
         ],
-        "max_tokens": 1000,
-        "temperature": 0.1
+        "max_tokens": 1500,
+        "temperature": 0.0
     }
 
     r = requests.post(
@@ -602,5 +626,195 @@ def api_scan_envelope(request):
 
     merged, diag = _merge_envelope_json(json_list)
 
-    out = {"analysis_type":"envelope", "shots": shots_raw, "merged": merged, "diagnostics": diag}
+    # DB에 저장 (PillIdentification 모델 사용)
+    saved_id = None
+    try:
+        from .models import PillIdentification
+        from django.contrib.auth.models import User
+
+        # 기본 사용자 가져오기 (로그인 없는 경우)
+        if request.user.is_authenticated:
+            user = request.user
+        else:
+            user, _ = User.objects.get_or_create(username='default_user')
+
+        # DB 저장
+        pill_record = PillIdentification.objects.create(
+            user=user,
+            patient_name=merged.get('patient_name', ''),
+            age=merged.get('age', ''),
+            dispense_date=merged.get('dispense_date', '') or None,
+            pharmacy_name=merged.get('pharmacy_name', ''),
+            prescription_number=merged.get('prescription_number', ''),
+            medicine_name=merged.get('medicine_name', ''),
+            dosage_instructions=merged.get('dosage_instructions', ''),
+            frequency=merged.get('frequency', ''),
+            confidence_score=diag.get('medicine_name', {}).get('confidence', 0.0),
+            raw_response=json.dumps({"shots": shots_raw, "diagnostics": diag}, ensure_ascii=False)
+        )
+        saved_id = pill_record.id
+    except Exception as e:
+        logger.error(f"Failed to save pill identification to DB: {e}")
+        # DB 저장 실패해도 JSON은 반환
+
+    out = {
+        "analysis_type": "envelope",
+        "shots": shots_raw,
+        "merged": merged,
+        "diagnostics": diag,
+        "saved_to_db": saved_id is not None,
+        "record_id": saved_id
+    }
     return JsonResponse(out, status=200)
+
+
+# ==================== ElevenLabs Voice 관련 API ====================
+
+from django.views.decorators.csrf import csrf_exempt
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from .services.elevenlabs_service import ElevenLabsService
+from .models import VoiceUserVoice
+from django.contrib.auth.decorators import login_required
+import hashlib
+from datetime import datetime
+
+
+def voice_setup(request):
+    """음성 등록 페이지"""
+    return render(request, "carepill/voice_setup.html")
+
+
+@csrf_exempt
+def api_voice_upload(request):
+    """
+    음성 파일 업로드 및 ElevenLabs Voice Clone 생성
+
+    POST /api/voice/upload/
+    - voice_file: 음성 파일 (15초 이상)
+
+    Returns:
+        {
+            "success": bool,
+            "voice_id": str,
+            "message": str
+        }
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST method required'}, status=405)
+
+    voice_file = request.FILES.get('voice_file')
+    if not voice_file:
+        return JsonResponse({'success': False, 'message': '음성 파일이 필요합니다'}, status=400)
+
+    try:
+        # 현재 사용자 (로그인 없으면 기본 사용자 사용)
+        if request.user.is_authenticated:
+            user = request.user
+        else:
+            from django.contrib.auth.models import User
+            user, _ = User.objects.get_or_create(username='default_user')
+
+        # 파일 저장
+        file_hash = hashlib.md5(voice_file.read()).hexdigest()
+        voice_file.seek(0)  # 파일 포인터 리셋
+
+        filename = f"voice_{user.id}_{file_hash}.mp3"
+        filepath = default_storage.save(f'voices/{filename}', ContentFile(voice_file.read()))
+        full_path = os.path.join(default_storage.location, filepath)
+
+        # ElevenLabs Voice Clone 생성
+        elevenlabs = ElevenLabsService()
+        result = elevenlabs.create_voice_clone(
+            voice_file_path=full_path,
+            voice_name=f"{user.username}_voice",
+            remove_bg_noise=True
+        )
+
+        if result['success']:
+            # DB에 저장 또는 업데이트
+            voice_record, created = VoiceUserVoice.objects.get_or_create(user=user)
+            voice_record.voice_file = filepath
+            voice_record.voice_id = result['voice_id']
+            voice_record.is_active = True
+            voice_record.save()
+
+            return JsonResponse({
+                'success': True,
+                'voice_id': result['voice_id'],
+                'message': '음성이 성공적으로 등록되었습니다',
+                'created': created
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': result['message']
+            }, status=500)
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'오류 발생: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+def api_text_to_speech(request):
+    """
+    텍스트를 ElevenLabs TTS로 변환
+
+    POST /api/tts/
+    - text: 변환할 텍스트
+    - user_id: (선택) 사용자 ID (없으면 default_user)
+
+    Returns:
+        audio/mpeg (MP3 바이너리)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST method required'}, status=405)
+
+    import json
+    try:
+        data = json.loads(request.body)
+    except:
+        data = request.POST
+
+    text = data.get('text')
+    if not text:
+        return JsonResponse({'success': False, 'message': '텍스트가 필요합니다'}, status=400)
+
+    try:
+        # 사용자 voice_id 조회
+        if request.user.is_authenticated:
+            user = request.user
+        else:
+            from django.contrib.auth.models import User
+            user = User.objects.filter(username='default_user').first()
+
+        if not user:
+            return JsonResponse({'success': False, 'message': '사용자를 찾을 수 없습니다'}, status=404)
+
+        voice_record = VoiceUserVoice.objects.filter(user=user, is_active=True).first()
+        if not voice_record or not voice_record.voice_id:
+            return JsonResponse({'success': False, 'message': '등록된 음성이 없습니다'}, status=404)
+
+        # ElevenLabs TTS 실행
+        elevenlabs = ElevenLabsService()
+        audio_content = elevenlabs.text_to_speech(
+            voice_id=voice_record.voice_id,
+            text=text
+        )
+
+        if audio_content:
+            from django.http import HttpResponse
+            response = HttpResponse(audio_content, content_type='audio/mpeg')
+            response['Content-Disposition'] = 'inline; filename="tts_output.mp3"'
+            return response
+        else:
+            return JsonResponse({'success': False, 'message': 'TTS 변환 실패'}, status=500)
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'오류 발생: {str(e)}'
+        }, status=500)

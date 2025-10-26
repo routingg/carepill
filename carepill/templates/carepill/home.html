@@ -45,6 +45,11 @@
         <stop offset="1" stop-color="#E100FF" />
       </linearGradient>
 
+      <linearGradient id="greenGradient" x1="0" y1="0" x2="100" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#7FD896" />
+        <stop offset="1" stop-color="#4CAF50" />
+      </linearGradient>
+
       <!-- Filters -->
       <filter id="innerShadow" x="0" y="0" width="116" height="113.903" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
         <feFlood flood-opacity="0" result="BackgroundImageFix" />
@@ -103,6 +108,18 @@
 
     <p class="brand-subtitle">당신의 복약을 더 쉽고、안전하게</p>
     <h1 class="brand-title">CARE<br>PILL</h1>
+
+    <!-- Voice registration button -->
+    <a href="{% url 'voice_setup' %}" class="voice-register-btn">
+      <svg viewBox="0 0 100 30" class="voice-btn-svg" preserveAspectRatio="none">
+        <rect x="0" y="0" width="100" height="30" rx="15" fill="url(#greenGradient)" opacity="0.9" />
+      </svg>
+      <svg class="voice-btn-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M12 14C13.66 14 15 12.66 15 11V5C15 3.34 13.66 2 12 2C10.34 2 9 3.34 9 5V11C9 12.66 10.34 14 12 14Z" fill="white"/>
+        <path d="M17 11C17 14.31 14.31 17 11 17C7.69 17 5 14.31 5 11H3C3 14.97 6.03 18.19 10 18.92V22H14V18.92C17.97 18.19 21 14.97 21 11H17Z" fill="white" transform="translate(1 0)"/>
+      </svg>
+      <span class="voice-btn-text">음성 등록</span>
+    </a>
   </div>
 
   <!-- Buttons -->

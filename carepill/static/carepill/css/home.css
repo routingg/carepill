@@ -85,6 +85,62 @@ body:has(.home-container) .footer {
   text-align: center;
 }
 
+/* Voice registration button */
+.voice-register-btn {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  max-width: 140px;
+  height: auto;
+  aspect-ratio: 100 / 30;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 12;
+  transition: transform 0.2s ease;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.voice-register-btn:hover {
+  transform: translateX(-50%) scale(1.05);
+}
+
+.voice-btn-svg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+}
+
+.voice-btn-icon {
+  position: absolute;
+  left: 8%;
+  top: 50%;
+  width: 20%;
+  height: auto;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.voice-btn-text {
+  position: absolute;
+  right: 15%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Baloo Bhaijaan', 'Noto Sans KR', sans-serif;
+  font-size: clamp(11px, 1.5vw, 18px);
+  color: white;
+  line-height: 1;
+  font-weight: 600;
+  z-index: 3;
+  white-space: nowrap;
+}
+
 /* Button container */
 .button-container {
   position: absolute;

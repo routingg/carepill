@@ -8,42 +8,145 @@
 {% block title %}홈 | CarePill{% endblock %}
 
 {% block content %}
-<!-- 홈 내용 -->
-<div class="home-wrap">
-  <section class="hero-card">
-    <h1 class="hero-title">CARE PILL</h1>
-    <p class="hero-sub">당신의 복약을 더 쉽고, 더 안전하게</p>
+<div class="home-container">
+  <div class="home-wrapper">
+  <svg class="home-svg" viewBox="0 0 261 156" preserveAspectRatio="xMidYMid meet">
+    <!-- Background -->
+    <defs>
+      <linearGradient id="bgGradient" x1="158.58" y1="43.5349" x2="88.9886" y2="176.434" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="white" />
+        <stop offset="1" stop-color="#B8E6FF" />
+      </linearGradient>
 
-    <!-- 음성 등록 버튼 (중간 크기) -->
-    <div class="voice-setup-section">
-      <a class="voice-setup-btn" href="/voice/setup/">
-        <span class="icon">🎙️</span>
-        <span class="text">나의 음성 등록하기</span>
-      </a>
-    </div>
-  </section>
+      <!-- Brand blob gradients -->
+      <linearGradient id="brandGradient1" x1="58" y1="0" x2="58" y2="109.744" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#FFCF41" />
+        <stop offset="0.480769" stop-color="#FFB01F" />
+      </linearGradient>
 
-  <section class="tile-grid">
-    <a class="tile tile-blue" href="/scan/">
-      <h3>약 투입</h3>
-      <p>약봉지 스캔 및 업로드</p>
-    </a>
-    <a class="tile tile-green" href="/meds/">
-      <h3>현재 있는 약</h3>
-      <p>보관 중인 약 목록 확인</p>
-    </a>
-    <a class="tile tile-purple" href="/voice/">
-      <h3>케어필과 대화</h3>
-      <p>보이스 기반 인터페이스</p>
-    </a>
-  </section>
+      <linearGradient id="brandGradient4" x1="58" y1="0" x2="58" y2="109.744" gradientUnits="userSpaceOnUse">
+        <stop offset="0.0961538" stop-color="#FFCF41" />
+        <stop offset="0.966346" stop-color="#FF9500" />
+      </linearGradient>
 
-  <!-- 음성 명령 UI -->
-  <div class="voice-control">
-    <button id="micBtn" class="mic-btn">🎤 말하기</button>
-    <p id="voiceResult" class="voice-result">음성을 인식하려면 버튼을 누르세요</p>
+      <!-- Button gradients -->
+      <linearGradient id="orangeGradient" x1="58.7707" y1="0" x2="59.0525" y2="26.6532" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#FFBD67" />
+        <stop offset="1" stop-color="#FF7700" />
+      </linearGradient>
+
+      <linearGradient id="blueGradient" x1="59.1991" y1="3.91944" x2="59.1991" y2="33.7072" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#75ABFF" />
+        <stop offset="1" stop-color="#0063FF" />
+      </linearGradient>
+
+      <linearGradient id="purpleGradient" x1="59.0947" y1="0" x2="58.9783" y2="26.6525" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#ED8EFF" />
+        <stop offset="1" stop-color="#E100FF" />
+      </linearGradient>
+
+      <!-- Filters -->
+      <filter id="innerShadow" x="0" y="0" width="116" height="113.903" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+        <feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape" />
+        <feColorMatrix in="SourceAlpha" result="hardAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" />
+        <feOffset dy="4" />
+        <feGaussianBlur stdDeviation="4.15" />
+        <feComposite in2="hardAlpha" k2="-1" k3="1" operator="arithmetic" />
+        <feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0" />
+        <feBlend in2="shape" mode="normal" result="effect1_innerShadow" />
+      </filter>
+
+      <!-- Clip paths for pill right halves -->
+      <clipPath id="pill1-right">
+        <rect x="146" y="5.44" width="18" height="7.26" />
+      </clipPath>
+      <clipPath id="pill2-right">
+        <rect x="189" y="5.44" width="18" height="7.26" />
+      </clipPath>
+      <clipPath id="pill3-right">
+        <rect x="233" y="5.44" width="18" height="7.26" />
+      </clipPath>
+    </defs>
+
+    <!-- Background rectangle -->
+    <path d="M0 10C0 4.47716 4.47715 0 10 0H251C256.523 0 261 4.47715 261 10V146C261 151.523 256.523 156 251 156H10C4.47715 156 0 151.523 0 146V10Z" fill="url(#bgGradient)" />
+
+    <!-- Pill-shaped tabs -->
+    <!-- 약투입 pill (orange) -->
+    <rect x="128" y="5.44" width="36" height="7.26" rx="3.63" fill="#FFB84D" />
+    <rect x="128" y="5.44" width="36" height="7.26" rx="3.63" fill="#FF9F2E" clip-path="url(#pill1-right)" />
+    <line x1="146" y1="5.44" x2="146" y2="12.7" stroke="#FFD39E" stroke-width="0.8" />
+
+    <!-- 현재있는 약 pill (orange) -->
+    <rect x="171" y="5.44" width="36" height="7.26" rx="3.63" fill="#FFB84D" />
+    <rect x="171" y="5.44" width="36" height="7.26" rx="3.63" fill="#FF9F2E" clip-path="url(#pill2-right)" />
+    <line x1="189" y1="5.44" x2="189" y2="12.7" stroke="#FFD39E" stroke-width="0.8" />
+
+    <!-- 말하기 pill (green) -->
+    <rect x="215" y="5.44" width="36" height="7.26" rx="3.63" fill="#C5E89D" />
+    <rect x="215" y="5.44" width="36" height="7.26" rx="3.63" fill="#B0D97A" clip-path="url(#pill3-right)" />
+    <line x1="233" y1="5.44" x2="233" y2="12.7" stroke="#E3F4C8" stroke-width="0.8" />
+  </svg>
+
+  <!-- Brand blob (absolute positioned) -->
+  <div class="brand-blob-container">
+    <svg viewBox="0 0 116 110" fill="none" class="brand-blob-svg">
+      <g filter="url(#innerShadow)">
+        <path d="M86.7207 52.7973C86.7207 66.1295 75.3633 76.9373 61.3531 76.9373C47.343 76.9373 35.9855 66.1295 35.9855 52.7973C35.9855 39.4652 47.343 28.6574 61.3531 28.6574C75.3633 28.6574 86.7207 39.4652 86.7207 52.7973Z" fill="url(#brandGradient1)" />
+        <path d="M13.4365 21.968C13.4365 16.4452 17.9136 11.968 23.4365 11.968H51.6663C57.1891 11.968 61.6663 16.4452 61.6663 21.968V66.9373C61.6663 72.4601 57.1891 76.9373 51.6663 76.9373H23.4365C17.9136 76.9373 13.4365 72.4602 13.4365 66.9373V21.968Z" fill="url(#brandGradient1)" />
+        <path d="M87.6049 11.968C91.2366 11.968 94.7398 13.8991 95.7443 17.3891C96.3949 19.6492 96.7425 22.0284 96.7425 24.485C96.7425 39.2985 84.1231 51.3072 68.5563 51.3072C52.9894 51.3072 40.37 39.2985 40.37 24.485C40.37 22.0284 40.7177 19.6492 41.3682 17.3891C42.3728 13.8991 45.8759 11.968 49.5076 11.968H87.6049Z" fill="url(#brandGradient1)" />
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M104.604 0C105.625 0 106.636 0.299612 107.407 0.96923C108.55 1.9624 109.311 2.91225 109.669 3.37936C110.456 4.406 111.026 5.39079 111.38 6.04412C112.152 7.46625 112.85 9.08508 113.445 10.7625C114.644 14.146 115.756 18.7027 115.966 23.9135C116.276 31.627 114.545 41.0153 108.223 49.5805C106.636 51.73 105.717 54.3138 105.603 56.9829C105.41 61.5308 104.464 66.4227 102.327 71.2463C97.281 82.6366 86.5254 91.4988 69.7935 94.5304L12.1298 107.1C5.89532 108.459 0 103.71 0 97.3295V10C0 4.47715 4.47715 0 10 0H104.604ZM29.1123 60.2928C29.1123 66.6736 35.0075 71.4223 41.242 70.0634L63.0735 65.3049L63.4077 65.2314L63.7453 65.173C67.7753 64.4699 69.9704 63.3089 71.1424 62.4448C72.2859 61.6017 72.9786 60.659 73.45 59.5947C74.5716 57.0628 74.4532 53.6443 73.7982 51.4685L72.8823 48.4262C71.6548 44.3486 73.1441 39.941 76.5934 37.4437L79.3897 35.419C83.877 32.1701 79.8354 26.9281 74.2955 26.9281H39.1123C33.5895 26.9281 29.1123 31.4052 29.1123 36.9281V60.2928Z" fill="url(#brandGradient4)" />
+        <path d="M16.9619 106.059L0 109.903V98.8476L14.0938 95.6533L16.9619 106.059Z" fill="#FF9E02" />
+      </g>
+    </svg>
+
+    <p class="brand-subtitle">당신의 복약을 더 쉽고、안전하게</p>
+    <h1 class="brand-title">CARE<br>PILL</h1>
   </div>
 
-  <script src="{% static 'carepill/js/tts_helper.js' %}"></script>
-  <script src="{% static 'carepill/js/voice_control.js' %}"></script>
+  <!-- Buttons -->
+  <div class="button-container">
+    <!-- Mini tabs -->
+    <div class="mini-tabs">
+      <span class="mini-tab-text">약 투입</span>
+      <span class="mini-tab-text">현재있는 약</span>
+      <span class="mini-tab-text">CAREPILL과 대화</span>
+    </div>
+
+    <!-- Orange button -->
+    <a href="/scan/" class="menu-button menu-button-1">
+      <svg viewBox="0 0 118 27" class="button-svg" preserveAspectRatio="none">
+        <g opacity="0.8">
+          <path d="M117 0C117.338 9.25243e-08 117.671 0.017146 118 0.0498047V26.6016C117.671 26.6342 117.338 26.6523 117 26.6523H10C4.47722 26.6523 9.91628e-05 22.1751 0 16.6523V10C0 4.47715 4.47715 0 10 0H117Z" fill="url(#orangeGradient)" />
+        </g>
+      </svg>
+      <img src="{% static 'carepill/images/pill.png' %}" class="button-icon" alt="">
+      <span class="button-text">약 투입</span>
+    </a>
+
+    <!-- Blue button -->
+    <a href="/meds/" class="menu-button menu-button-2">
+      <svg viewBox="0 0 118 27" class="button-svg" preserveAspectRatio="none">
+        <g opacity="0.8">
+          <path d="M117 0C117.337 9.2524e-08 117.671 0.0161727 118 0.0488281V26.6006C117.671 26.6333 117.338 26.6514 117 26.6514H10C4.47715 26.6514 0 22.1742 0 16.6514V10C0 4.47715 4.47715 0 10 0H117Z" fill="url(#blueGradient)" />
+        </g>
+      </svg>
+      <img src="{% static 'carepill/images/box.png' %}" class="button-icon" alt="">
+      <span class="button-text">현재있는 약</span>
+    </a>
+
+    <!-- Purple button -->
+    <a href="/voice/" class="menu-button menu-button-3">
+      <svg viewBox="0 0 118 27" class="button-svg" preserveAspectRatio="none">
+        <g opacity="0.8">
+          <path d="M117 0C117.338 9.25238e-08 117.671 0.0171462 118 0.0498047V26.6016C117.671 26.6342 117.338 26.6523 117 26.6523H10C4.47721 26.6523 8.70927e-05 22.1751 0 16.6523V10C1.33034e-05 4.47716 4.47716 0 10 0H117Z" fill="url(#purpleGradient)" />
+        </g>
+      </svg>
+      <img src="{% static 'carepill/images/chat.png' %}" class="button-icon" alt="">
+      <span class="button-text">말하기</span>
+    </a>
+  </div>
+  </div>
+</div>
 {% endblock %}
